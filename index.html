@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim — Plateforme de capture et d'exécution de processus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary:#15803d; --secondary:#0d9488; --accent:#b45309;
+    --gray:#6b7280; --bg:#f3f6f4; --ink:#111827; --line:#e5e7eb;
+    --radius:14px; --shadow: 0 1px 2px rgba(16,24,40,.04), 0 2px 8px rgba(16,24,40,.06);
+    --shadow-hover: 0 8px 24px rgba(16,24,40,.12);
+    /* alias conservés pour compatibilité */
+    --blue: var(--primary); --purple: var(--secondary); --green: var(--accent);
+  }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--ink); }
+  header {
+    background: linear-gradient(135deg, #1e293b, #0f172a); color: white;
+    padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -0.2px; }
+  header h1 span { color: #94a3b8; font-weight: 400; font-size: 13px; }
+  .userbox { font-size: 13px; color: #cbd5e1; display: flex; align-items: center; gap: 10px; }
+  .role-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(255,255,255,.12); text-transform: capitalize; letter-spacing: .3px; }
+  nav { display: flex; gap: 4px; padding: 10px 24px; background: white; border-bottom: 1px solid var(--line); flex-wrap: wrap; position: sticky; top: 0; z-index: 5; }
+  nav button {
+    background: none; border: none; padding: 9px 16px; border-radius: 10px; cursor: pointer;
+    font-size: 14px; font-weight: 600; color: #6b7280; transition: all .15s;
+  }
+  nav button:hover { background: #f1f5f9; color: var(--ink); }
+  nav button.active { background: var(--blue); color: white; }
+  main { max-width: 1000px; margin: 0 auto; padding: 28px 20px 60px; }
+  .card { background: white; border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--line); }
+  button.btn {
+    padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line); background: white;
+    cursor: pointer; font-size: 14px; font-weight: 600; color: var(--ink); transition: all .15s;
+  }
+  button.btn:hover { border-color: #9ca3af; }
+  button.btn.primary { background: var(--blue); color: white; border: none; box-shadow: 0 1px 2px rgba(37,99,235,.4); }
+  button.btn.primary:hover { background: var(--blue-dark); }
+  button.btn.ghost { border: none; background: transparent; color: var(--blue); font-weight: 600; }
+  button.btn.danger { background: #dc2626; color: white; border: none; }
+  button.btn:disabled { opacity: .4; cursor: not-allowed; }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+    font-family: inherit; font-size: 14px; box-sizing: border-box; background: #fafafa; transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); background: white; }
+  label { font-size: 12px; font-weight: 700; color: #6b7280; display: block; margin: 14px 0 5px; text-transform: uppercase; letter-spacing: .3px; }
+  input[type=checkbox] { width: auto; flex-shrink: 0; padding: 0; border: none; margin-top: 3px; accent-color: var(--blue); transform: scale(1.2); }
+  .badge { display: inline-block; padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; color: white; letter-spacing: .2px; margin-right: 4px; }
+  .badge.processus { background: var(--blue); }
+  .badge.procedure { background: var(--purple); }
+  .badge.documentation { background: var(--green); }
+  .badge.brouillon { background: #f59e0b; color: white; }
+  .badge.publie { background: #16a34a; color: white; }
+  .legende { font-size: 12px; color: #555; margin: 4px 0 22px; display: flex; gap: 20px; flex-wrap: wrap; background: white; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+  .contenu-card { cursor: pointer; transition: box-shadow .18s, transform .18s; }
+  .contenu-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .contenu-card h3 { margin: 10px 0 6px; font-size: 15px; font-weight: 700; }
+  .contenu-card p { margin: 0; font-size: 13px; color: #6b7280; line-height: 1.4; }
+  .meta { font-size: 11px; color: #9ca3af; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .toolbar input[type=text] { flex: 1; min-width: 200px; }
+  .filtre-btn { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--line); background: white; cursor: pointer; font-size: 12px; font-weight: 600; color: #555; }
+  .filtre-btn.active { background: var(--ink); color: white; border-color: var(--ink); }
+  .champ-lecture { margin-bottom: 16px; }
+  .champ-lecture label { color: #9ca3af; margin: 0 0 4px; }
+  .champ-lecture div { font-size: 14.5px; white-space: pre-wrap; line-height: 1.55; }
+  .vigilance { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 12px 14px; border-radius: 8px; font-size: 13.5px; }
+  .checklist-item { display: flex; align-items: start; gap: 12px; padding: 12px 4px; border-bottom: 1px solid #f1f5f9; font-size: 14.5px; }
+  .checklist-item.coche { opacity: 0.45; text-decoration: line-through; }
+  .hidden { display: none !important; }
+  .erreur { color: #dc2626; font-size: 13px; margin-top: 8px; }
+  .info { color: #6b7280; font-size: 12.5px; margin-top: 8px; }
+  .lien-retour { cursor: pointer; color: var(--blue); font-size: 13px; margin-bottom: 14px; display: inline-block; font-weight: 600; }
+  #micStatus.actif { color: #dc2626; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table th { text-align: left; padding: 10px 8px; color: #9ca3af; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+  table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
+  h2 { font-size: 19px; font-weight: 800; letter-spacing: -.3px; margin-top: 4px; }
+  .section-titre { font-size: 15px; font-weight: 700; margin: 4px 0 14px; }
+  .boutons-creation { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chat-bulle { border-radius: 16px; padding: 14px 18px; margin-bottom: 14px; max-width: 82%; font-size: 14px; line-height: 1.55; }
+  .chat-bulle.question { background: linear-gradient(135deg, var(--blue), #4f46e5); color: white; margin-left: auto; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
+  .chat-bulle.reponse { background: white; border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .chat-bulle.reponse .sources { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip-source { background: #f8fafc; border: 1px solid var(--line); border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--blue); font-weight: 600; transition: all .15s; }
+  .chip-source:hover { background: #eff6ff; border-color: var(--blue); }
+
+  /* --- Refonte esthétique v2 : couleurs dynamiques (thème d'organisation) --- */
+  body {
+    background:
+      radial-gradient(circle at 8% 8%, color-mix(in srgb, var(--primary) 16%, transparent) 0%, transparent 40%),
+      radial-gradient(circle at 92% 18%, color-mix(in srgb, var(--secondary) 14%, transparent) 0%, transparent 38%),
+      radial-gradient(circle at 50% 95%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 40%),
+      var(--bg);
+  }
+  #fondPersonnalise { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; opacity: .5; }
+  .card { border: 1px solid var(--line); }
+  .contenu-card.processus { background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 10%, white) 0%, white 90px); }
+  .contenu-card.procedure { background: linear-gradient(180deg, color-mix(in srgb, var(--secondary) 10%, white) 0%, white 90px); }
+  .contenu-card.documentation { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, white) 0%, white 90px); }
+  .badge.processus { background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, black)); }
+  .badge.procedure { background: linear-gradient(135deg, var(--secondary), color-mix(in srgb, var(--secondary) 70%, black)); }
+  .badge.documentation { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, black)); }
+  .badge.brouillon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .badge.publie { background: linear-gradient(135deg, #16a34a, #15803d); }
+  .hero { background: linear-gradient(120deg, var(--primary), var(--secondary) 100%); box-shadow: 0 14px 34px color-mix(in srgb, var(--primary) 35%, transparent); }
+  .legende { background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--primary) 4%, white)); border: 1px solid var(--line); }
+  nav { background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--primary) 3%, white)); }
+  nav button.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+  .logo-mark { background: linear-gradient(135deg, var(--accent), var(--secondary) 60%, var(--primary)); box-shadow: 0 3px 12px color-mix(in srgb, var(--primary) 45%, transparent); }
+  header { background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 55%, #0b1220), color-mix(in srgb, var(--secondary) 45%, #0b1220)); }
+  .filtre-btn.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); border-color: transparent; }
+  .chip-source { background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 8%, white), color-mix(in srgb, var(--secondary) 8%, white)); }
+  button.btn.primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); box-shadow: 0 3px 10px color-mix(in srgb, var(--primary) 35%, transparent); }
+  button.btn.primary:hover { filter: brightness(0.92); }
+  h2 { background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 70%, black), var(--primary)); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+  .hero h2 { background: none; -webkit-text-fill-color: white; color: white; }
+  .vigilance { background: linear-gradient(90deg, #fffbeb, #fff7ed); border-left: 4px solid #f59e0b; }
+  .avatar { background: linear-gradient(135deg, var(--accent), var(--secondary)); }
+  .swatch { width: 34px; height: 34px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; display: inline-block; }
+  .swatch.selectionne { border-color: var(--ink); }
+  .dropzone {
+    border: 2px dashed var(--line); border-radius: 12px; padding: 24px; text-align: center;
+    color: #6b7280; font-size: 13.5px; cursor: pointer; transition: all .15s; background: #fafafa;
+  }
+  .dropzone.survol { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, white); color: var(--ink); }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1, #2563eb);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+    box-shadow: 0 2px 8px rgba(99,102,241,.5);
+  }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white;
+  }
+  nav { border-radius: 0; box-shadow: 0 1px 0 rgba(0,0,0,.02); }
+  nav button { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+  nav button.active { box-shadow: 0 2px 10px rgba(37,99,235,.35); }
+  .hero {
+    background: linear-gradient(135deg, #0f172a, #1e3a8a 60%, #4338ca);
+    color: white; border-radius: var(--radius); padding: 28px 26px; margin-bottom: 22px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    box-shadow: 0 10px 30px rgba(30,58,138,.25);
+  }
+  .hero h2 { color: white; margin: 0 0 6px; font-size: 21px; }
+  .hero p { margin: 0; color: #c7d2fe; font-size: 13.5px; max-width: 480px; }
+  .hero-stats { display: flex; gap: 22px; }
+  .hero-stat { text-align: center; }
+  .hero-stat .n { font-size: 24px; font-weight: 800; display: block; }
+  .hero-stat .l { font-size: 11px; color: #c7d2fe; text-transform: uppercase; letter-spacing: .4px; }
+  .contenu-card { position: relative; overflow: hidden; padding-left: 20px; }
+  .contenu-card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  }
+  .contenu-card.processus::before { background: var(--blue); }
+  .contenu-card.procedure::before { background: var(--purple); }
+  .contenu-card.documentation::before { background: var(--green); }
+  .etat-vide {
+    text-align: center; padding: 50px 20px; background: white; border-radius: var(--radius);
+    border: 1px dashed #cbd5e1; color: #6b7280;
+  }
+  .etat-vide .emoji { font-size: 38px; margin-bottom: 10px; display: block; }
+  .badge { box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  button.btn.primary { background: linear-gradient(135deg, var(--blue), #4338ca); }
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+</style>
+</head>
+<body>
+<div id="fondPersonnalise"></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🎙️</div>
+    <h1>Verbatim<br><span>démonstrateur — données fictives</span></h1>
+  </div>
+  <div class="userbox hidden" id="userbox">
+    <div class="avatar" id="userAvatar"></div>
+    <span id="userEmail"></span>
+    <span class="role-tag" id="userRole"></span>
+    <button class="btn" id="btnLogout" style="background:rgba(255,255,255,.08); color:white; border-color:rgba(255,255,255,.2);">Déconnexion</button>
+  </div>
+</header>
+
+<!-- ===================== ECRAN CONNEXION ===================== -->
+<main id="ecranAuth">
+  <div class="card" style="max-width:420px; margin:40px auto;">
+    <h2 id="authTitre">Connexion</h2>
+    <div id="champsInscriptionSeulement" class="hidden">
+      <label>Nom complet</label>
+      <input type="text" id="inpNom" placeholder="Ex. Delya Maali">
+      <label>Identifiant d'organisation</label>
+      <input type="text" id="inpOrg" placeholder="Ex. mobilite-individuelle-demo">
+      <p class="info">Fourni par l'administrateur de ton entreprise. Un nouveau compte démarre toujours avec le rôle Lecteur.</p>
+    </div>
+    <label>E-mail</label>
+    <input type="email" id="inpEmail">
+    <label>Mot de passe</label>
+    <input type="password" id="inpPass">
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      <button class="btn primary" id="btnAuthAction">Se connecter</button>
+      <button class="btn" id="btnToggleAuth">Créer un compte</button>
+    </div>
+    <p class="erreur" id="authErreur"></p>
+  </div>
+</main>
+
+<!-- ===================== APPLICATION ===================== -->
+<div id="app" class="hidden">
+<nav>
+  <button class="active" data-vue="catalogue">📚 Catalogue</button>
+  <button data-vue="assistant">💬 Assistant</button>
+  <button data-vue="creer" id="navCreer">+ Créer un contenu</button>
+  <button data-vue="equipe" id="navEquipe">👥 Équipe</button>
+  <button data-vue="parametres" id="navParametres">🎨 Paramètres</button>
+</nav>
+
+<main>
+
+  <!-- CATALOGUE -->
+  <section id="vueCatalogue">
+    <div class="hero">
+      <div>
+        <h2 id="heroTitre">Bonjour 👋</h2>
+        <p>Retrouve, crée et exécute les processus de ton organisation — capturés en parlant, pas en rédigeant.</p>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="n" id="statTotal">0</span><span class="l">Contenus</span></div>
+        <div class="hero-stat"><span class="n" id="statPublies">0</span><span class="l">Publiés</span></div>
+      </div>
+    </div>
+    <div id="banniereValidation" class="hidden" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13.5px; font-weight:600; cursor:pointer;" onclick="filtrerAValider()">
+      ⚠️ <span id="banniereValidationTexte"></span> — clique pour filtrer
+    </div>
+    <div class="toolbar">
+      <input type="text" id="recherche" placeholder="🔎 Rechercher un mot-clé...">
+      <button class="filtre-btn active" data-filtre="Tous">Tous</button>
+      <button class="filtre-btn" data-filtre="Processus opérationnel">Processus</button>
+      <button class="filtre-btn" data-filtre="Procédure technique">Procédure</button>
+      <button class="filtre-btn" data-filtre="Documentation">Doc</button>
+      <button class="filtre-btn" data-filtre="AValider">🤖 À valider</button>
+    </div>
+    <div class="legende">
+      <span><span class="badge processus">Processus</span> organisation complète, rôles, enchaînement</span>
+      <span><span class="badge procedure">Procédure</span> manipulation technique précise</span>
+      <span><span class="badge documentation">Doc</span> explications, référence générale</span>
+    </div>
+    <div id="grilleCatalogue" class="grid"></div>
+    <p id="catalogueVide" class="info hidden">Aucun contenu pour l'instant.
+      <button class="btn" onclick="chargerExemples()">Charger 4 exemples fictifs</button>
+    </p>
+  </section>
+
+  <!-- FICHE DETAIL -->
+  <section id="vueFiche" class="hidden">
+    <span class="lien-retour" onclick="allerVue('catalogue')">← Retour au catalogue</span>
+    <div class="card" id="ficheContenu"></div>
+  </section>
+
+  <!-- EXECUTION -->
+  <section id="vueExecuter" class="hidden">
+    <span class="lien-retour" onclick="allerVue('catalogue')">← Retour au catalogue</span>
+    <div class="card" id="executerContenu"></div>
+  </section>
+
+  <!-- CREATION / MODIFICATION -->
+  <section id="vueCreer" class="hidden">
+    <span class="lien-retour" onclick="allerVue('catalogue')">← Annuler et retourner au catalogue</span>
+    <div class="card">
+      <h2 id="creerTitre">Nouveau contenu</h2>
+      <p>Micro : <span id="micStatus" style="color:#999;">inactif</span></p>
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button class="btn" id="btnMicStart">🎤 Démarrer</button>
+        <button class="btn" id="btnMicStop" disabled>Arrêter</button>
+        <button class="btn" id="btnMicCancel" disabled>Annuler</button>
+        <button class="btn" id="btnMicRestart">Recommencer</button>
+      </div>
+      <label>Explique ton processus (voix ou texte)</label>
+      <textarea id="transcription" style="min-height:100px;" placeholder="La transcription apparaît ici — tu peux aussi taper directement."></textarea>
+      <div class="boutons-creation" style="margin-top:10px;">
+        <button class="btn primary" id="btnGenererBrouillon">✨ Générer le brouillon avec l'IA</button>
+        <button class="btn" id="btnRemplirManuel">✍️ Remplir le formulaire manuellement</button>
+      </div>
+      <div style="margin-top:16px; border-top:1px dashed #e5e7eb; padding-top:14px;">
+        <label style="margin-top:0;">Ou importer un schéma existant (Miro, draw.io, PowerPoint, Word, capture d'écran...) — expérimental</label>
+        <p class="info" style="margin-top:0;">Fonctionne directement avec une image ou un PDF. Pour un fichier Word/PowerPoint, exporte-le d'abord en PDF ou fais une capture d'écran (Word/PowerPoint : « Fichier → Exporter → PDF »).</p>
+        <div class="dropzone" id="dropzoneMiro">
+          📎 Glisse ta capture d'écran ou ton fichier ici, ou <u>clique pour choisir un fichier</u>
+          <input type="file" id="inputMiro" accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx" class="hidden">
+        </div>
+        <p class="info" id="miroFichierNom"></p>
+      </div>
+      <p class="info" id="genererStatus"></p>
+
+      <div id="formulaireContenu" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:16px;">
+        <label>Titre</label><input id="f_titre">
+        <label>Type</label>
+        <select id="f_type">
+          <option>Processus opérationnel</option>
+          <option>Procédure technique</option>
+          <option>Documentation</option>
+        </select>
+        <label>Catégorie (optionnel)</label><input id="f_categorie">
+        <label>Résumé</label><textarea id="f_resume"></textarea>
+        <label>Prérequis</label><textarea id="f_prerequis"></textarea>
+        <label>Étapes (une par ligne)</label><textarea id="f_etapes" style="min-height:100px;"></textarea>
+        <label>Points de vigilance</label><textarea id="f_vigilance"></textarea>
+        <label>Interlocuteurs (séparés par des virgules)</label><input id="f_interlocuteurs">
+        <label>Liens utiles (séparés par des virgules)</label><input id="f_liens">
+        <label style="color:#b45309;">Informations manquantes signalées par l'IA</label>
+        <textarea id="f_manquant" style="min-height:50px;"></textarea>
+        <div style="margin-top:16px; display:flex; gap:10px;">
+          <button class="btn" id="btnSauvegarderBrouillon">Enregistrer comme brouillon</button>
+          <button class="btn primary" id="btnPublier">Publier</button>
+        </div>
+        <p class="erreur" id="saveErreur"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ASSISTANT QUESTIONS/REPONSES -->
+  <section id="vueAssistant" class="hidden">
+    <div class="card">
+      <h2>💬 Assistant de connaissance</h2>
+      <p class="info" style="margin-bottom:16px;">Pose une question sur les processus de ton entreprise. L'IA ne répond qu'à partir des contenus publiés — jamais en inventant.</p>
+      <div id="chatHistorique"></div>
+      <p class="info" style="margin:6px 0;">Micro : <span id="micStatusChat" style="color:#999;">inactif</span>
+        <button class="btn" id="btnMicChatStart" style="padding:4px 10px; margin-left:8px;">🎤</button>
+        <button class="btn" id="btnMicChatStop" style="padding:4px 10px;" disabled>■</button>
+      </p>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="chatQuestion" placeholder="Ex. Qui contacter pour une exception sur une campagne de renouvellement ?">
+        <button class="btn primary" id="btnPoserQuestion">Envoyer</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARAMETRES (admin) -->
+  <section id="vueParametres" class="hidden">
+    <div class="card">
+      <h2>🎨 Personnaliser l'apparence</h2>
+      <p class="info" style="margin-bottom:16px;">Visible par toute l'équipe de ton organisation.</p>
+
+      <label style="margin-top:0;">Thèmes prédéfinis</label>
+      <div id="listeThemesPredefinis" style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px;"></div>
+
+      <label>Personnaliser les couleurs</label>
+      <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+        <span>Couleur principale <input type="color" id="couleurPrimaire" style="width:50px; padding:2px;"></span>
+        <span>Couleur secondaire <input type="color" id="couleurSecondaire" style="width:50px; padding:2px;"></span>
+        <span>Couleur d'accent <input type="color" id="couleurAccent" style="width:50px; padding:2px;"></span>
+      </div>
+
+      <label>Fond de l'application</label>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <button class="btn filtre-btn" data-fond="aucun">Aucun (uni)</button>
+        <button class="btn filtre-btn" data-fond="degrade">Dégradé doux</button>
+        <button class="btn filtre-btn" data-fond="motif">Motif discret</button>
+      </div>
+      <label>Ou une image de fond (URL externe — pas de mise en ligne de fichier sur cette version)</label>
+      <input type="text" id="fondUrl" placeholder="https://...">
+
+      <div style="margin-top:20px;">
+        <button class="btn primary" id="btnEnregistrerTheme">Enregistrer l'apparence</button>
+      </div>
+      <p class="info" id="themeStatus"></p>
+    </div>
+  </section>
+
+  <!-- EQUIPE (admin) -->
+  <section id="vueEquipe" class="hidden">
+    <div class="card">
+      <h2>Équipe — <span id="equipeOrg"></span></h2>
+      <p class="info">Ajoute une personne en lui communiquant l'identifiant d'organisation ci-dessus : elle crée son compte, puis tu ajustes son rôle ici.</p>
+      <table>
+        <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th></tr></thead>
+        <tbody id="equipeTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyChb8XkQ7ANeZY2q_g5S98QL03Kixe2SsE",
+  authDomain: "processus-demo.firebaseapp.com",
+  projectId: "processus-demo",
+  storageBucket: "processus-demo.firebasestorage.app",
+  messagingSenderId: "722496153548",
+  appId: "1:722496153548:web:2a0475e019c25663145f69"
+};
+
+const app = initializeApp(firebaseConfig);
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = "2f8a1c9d-7b3e-4a1f-8c2d-6b4f1a3d5c9e";
+initializeAppCheck(app, { provider: new ReCaptchaV3Provider("placeholder-non-utilise-en-debug"), isTokenAutoRefreshEnabled: true });
+
+const auth = getAuth(app);
+const db = getFirestore(app);
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+const model = getGenerativeModel(ai, { model: "gemini-3.6-flash" });
+
+let profil = null; // { organisationId, role, nom, email }
+let contenus = [];
+let contenuCourantId = null;
+let filtreType = "Tous";
+
+// ---------- AUTH ----------
+let modeInscription = false;
+document.getElementById("btnToggleAuth").onclick = () => {
+  modeInscription = !modeInscription;
+  document.getElementById("champsInscriptionSeulement").classList.toggle("hidden", !modeInscription);
+  document.getElementById("authTitre").textContent = modeInscription ? "Créer un compte" : "Connexion";
+  document.getElementById("btnAuthAction").textContent = modeInscription ? "Créer mon compte" : "Se connecter";
+  document.getElementById("btnToggleAuth").textContent = modeInscription ? "J'ai déjà un compte" : "Créer un compte";
+};
+
+document.getElementById("btnAuthAction").onclick = async () => {
+  const email = document.getElementById("inpEmail").value.trim();
+  const pass = document.getElementById("inpPass").value;
+  const erreurEl = document.getElementById("authErreur");
+  erreurEl.textContent = "";
+  try {
+    if (modeInscription) {
+      const nom = document.getElementById("inpNom").value.trim();
+      const orgId = document.getElementById("inpOrg").value.trim();
+      if (!nom || !orgId) { erreurEl.textContent = "Nom et identifiant d'organisation obligatoires."; return; }
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await setDoc(doc(db, "users", cred.user.uid), {
+        nom, email, organisationId: orgId, role: "lecteur", dateCreation: serverTimestamp()
+      });
+    } else {
+      await signInWithEmailAndPassword(auth, email, pass);
+    }
+  } catch (err) {
+    erreurEl.textContent = traduireErreur(err.code || err.message);
+  }
+};
+
+function traduireErreur(code) {
+  const map = {
+    "auth/email-already-in-use": "Cet e-mail a déjà un compte — connecte-toi plutôt.",
+    "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
+    "auth/invalid-email": "E-mail invalide.",
+    "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
+    "auth/user-not-found": "Aucun compte avec cet e-mail.",
+    "auth/wrong-password": "Mot de passe incorrect."
+  };
+  return map[code] || ("Erreur : " + code);
+}
+
+document.getElementById("btnLogout").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    profil = null;
+    document.getElementById("ecranAuth").classList.remove("hidden");
+    document.getElementById("app").classList.add("hidden");
+    document.getElementById("userbox").classList.add("hidden");
+    return;
+  }
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) {
+    document.getElementById("authErreur").textContent = "Profil introuvable — réessaie de créer un compte.";
+    await signOut(auth);
+    return;
+  }
+  profil = { uid: user.uid, ...snap.data() };
+  document.getElementById("ecranAuth").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("userbox").classList.remove("hidden");
+  document.getElementById("userEmail").textContent = profil.nom + " (" + profil.email + ")";
+  document.getElementById("userRole").textContent = profil.role;
+  document.getElementById("userAvatar").textContent = (profil.nom || "?").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
+  document.getElementById("heroTitre").textContent = "Bonjour " + profil.nom.split(" ")[0] + " 👋";
+  document.getElementById("navCreer").classList.toggle("hidden", profil.role === "lecteur");
+  document.getElementById("navEquipe").classList.toggle("hidden", profil.role !== "admin");
+  document.getElementById("navParametres").classList.toggle("hidden", profil.role !== "admin");
+  await chargerEtAppliquerTheme();
+  await chargerContenus();
+  allerVue("catalogue");
+});
+
+// ---------- THEME PAR ORGANISATION ----------
+const THEMES_PREDEFINIS = {
+  "Vert forêt":  { primaire:"#15803d", secondaire:"#0d9488", accent:"#b45309" },
+  "Indigo nuit": { primaire:"#4338ca", secondaire:"#7c3aed", accent:"#db2777" },
+  "Bleu marine": { primaire:"#1d4ed8", secondaire:"#0891b2", accent:"#f59e0b" },
+  "Terracotta":  { primaire:"#c2410c", secondaire:"#92400e", accent:"#0891b2" }
+};
+const FONDS_PREDEFINIS = {
+  degrade: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, white), color-mix(in srgb, var(--secondary) 10%, white))",
+  motif: "repeating-linear-gradient(45deg, color-mix(in srgb, var(--primary) 4%, white) 0 12px, white 12px 24px)"
+};
+
+function appliquerTheme(t) {
+  if (!t) return;
+  const root = document.documentElement.style;
+  if (t.primaire) root.setProperty("--primary", t.primaire);
+  if (t.secondaire) root.setProperty("--secondary", t.secondaire);
+  if (t.accent) root.setProperty("--accent", t.accent);
+  const fondEl = document.getElementById("fondPersonnalise");
+  if (t.fond && t.fond.startsWith("http")) {
+    fondEl.style.background = "";
+    fondEl.style.backgroundImage = `url("${t.fond}")`;
+    fondEl.style.backgroundSize = "cover";
+  } else if (t.fond && FONDS_PREDEFINIS[t.fond]) {
+    fondEl.style.backgroundImage = "";
+    fondEl.style.background = FONDS_PREDEFINIS[t.fond];
+  } else {
+    fondEl.style.background = "";
+    fondEl.style.backgroundImage = "";
+  }
+}
+
+async function chargerEtAppliquerTheme() {
+  const snap = await getDoc(doc(db, "organisations", profil.organisationId));
+  if (snap.exists() && snap.data().theme) appliquerTheme(snap.data().theme);
+}
+
+function chargerEcranTheme() {
+  const conteneur = document.getElementById("listeThemesPredefinis");
+  conteneur.innerHTML = Object.entries(THEMES_PREDEFINIS).map(([nom, t]) => `
+    <div style="text-align:center; cursor:pointer;" onclick='appliquerThemePredefini(${JSON.stringify(t)})'>
+      <span class="swatch" style="background:linear-gradient(135deg, ${t.primaire}, ${t.secondaire})"></span>
+      <div style="font-size:11px; margin-top:4px; color:#555;">${nom}</div>
+    </div>
+  `).join("");
+  document.getElementById("couleurPrimaire").value = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#15803d";
+  document.getElementById("couleurSecondaire").value = getComputedStyle(document.documentElement).getPropertyValue("--secondary").trim() || "#0d9488";
+  document.getElementById("couleurAccent").value = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#b45309";
+}
+window.appliquerThemePredefini = function (t) {
+  appliquerTheme(t);
+  chargerEcranTheme();
+};
+document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    appliquerTheme({ fond: b.dataset.fond });
+  };
+});
+document.getElementById("btnEnregistrerTheme").onclick = async () => {
+  const fondActif = document.querySelector("#vueParametres .filtre-btn[data-fond].active");
+  const theme = {
+    primaire: document.getElementById("couleurPrimaire").value,
+    secondaire: document.getElementById("couleurSecondaire").value,
+    accent: document.getElementById("couleurAccent").value,
+    fond: document.getElementById("fondUrl").value.trim() || (fondActif ? fondActif.dataset.fond : "aucun")
+  };
+  await setDoc(doc(db, "organisations", profil.organisationId), { theme, nom: profil.organisationId }, { merge: true });
+  appliquerTheme(theme);
+  document.getElementById("themeStatus").textContent = "✅ Apparence enregistrée pour toute l'organisation.";
+};
+
+// ---------- NAVIGATION ----------
+window.allerVue = function (vue) {
+  ["Catalogue","Fiche","Executer","Creer","Equipe","Assistant","Parametres"].forEach(v => {
+    document.getElementById("vue" + v).classList.toggle("hidden", v.toLowerCase() !== vue);
+  });
+  document.querySelectorAll("nav button[data-vue]").forEach(b => b.classList.toggle("active", b.dataset.vue === vue));
+  if (vue === "creer") prepareFormulaireNouveau();
+  if (vue === "equipe") chargerEquipe();
+  if (vue === "parametres") chargerEcranTheme();
+};
+document.querySelectorAll("nav button[data-vue]").forEach(b => b.onclick = () => allerVue(b.dataset.vue));
+
+// ---------- CATALOGUE ----------
+async function chargerContenus() {
+  const q = query(collection(db, "contenus"), where("organisationId", "==", profil.organisationId));
+  const snap = await getDocs(q);
+  contenus = [];
+  snap.forEach(d => contenus.push({ id: d.id, ...d.data() }));
+  afficherCatalogue();
+}
+
+function afficherCatalogue() {
+  const recherche = document.getElementById("recherche").value.toLowerCase();
+  const grille = document.getElementById("grilleCatalogue");
+  const filtres = contenus.filter(c => {
+    const matchType = filtreType === "Tous" || c.type === filtreType
+                     || (filtreType === "AValider" && c.origineIA && !c.valideParResponsable);
+    const texte = (c.titre + " " + (c.resume||"") + " " + (c.etapes||[]).join(" ")).toLowerCase();
+    return matchType && texte.includes(recherche);
+  });
+  document.getElementById("catalogueVide").classList.toggle("hidden", contenus.length > 0);
+  document.getElementById("statTotal").textContent = contenus.length;
+  document.getElementById("statPublies").textContent = contenus.filter(c => c.statut === "Publié").length;
+  grille.innerHTML = filtres.length ? filtres.map(c => `
+    <div class="card contenu-card ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
+      <span class="badge ${classeType(c.type)}">${c.type}</span>
+      <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
+      ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge" style="background:#dc2626;">🤖 À valider</span>` : ""}
+      <h3>${escHtml(c.titre)}</h3>
+      <p>${escHtml(c.resume || "")}</p>
+      <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}</div>
+    </div>
+  `).join("") : (contenus.length ? `<div class="etat-vide"><span class="emoji">🔍</span>Aucun résultat pour cette recherche.</div>` : "");
+  afficherBanniereValidation();
+}
+
+function afficherBanniereValidation() {
+  const banniere = document.getElementById("banniereValidation");
+  if (profil.role === "lecteur") { banniere.classList.add("hidden"); return; }
+  const nb = contenus.filter(c => c.origineIA && !c.valideParResponsable).length;
+  if (nb > 0) {
+    banniere.classList.remove("hidden");
+    document.getElementById("banniereValidationTexte").textContent =
+      nb + " contenu" + (nb > 1 ? "s" : "") + " généré" + (nb > 1 ? "s" : "") + " par l'IA en attente de validation par un responsable";
+  } else {
+    banniere.classList.add("hidden");
+  }
+}
+window.filtrerAValider = function () {
+  filtreType = "AValider";
+  document.querySelectorAll(".filtre-btn").forEach(x => x.classList.toggle("active", x.dataset.filtre === "AValider"));
+  afficherCatalogue();
+};
+function classeType(t) {
+  if (t === "Processus opérationnel") return "processus";
+  if (t === "Procédure technique") return "procedure";
+  return "documentation";
+}
+function formatDate(ts) {
+  if (!ts || !ts.toDate) return "à l'instant";
+  return ts.toDate().toLocaleDateString("fr-FR");
+}
+function escHtml(s) { return String(s || "").replace(/</g, "&lt;"); }
+function escAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
+
+document.getElementById("recherche").oninput = afficherCatalogue;
+document.querySelectorAll(".filtre-btn").forEach(b => b.onclick = () => {
+  filtreType = b.dataset.filtre;
+  document.querySelectorAll(".filtre-btn").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  afficherCatalogue();
+});
+
+window.chargerExemples = async function () {
+  const exemples = [
+    { titre: "Campagne de renouvellement d'équipements fictive", type: "Processus opérationnel", resume: "Organisation d'une campagne de remplacement d'équipements en fin de vie.", prerequis: "Liste des équipements concernés extraite de l'outil fictif Parc-X.", etapes: ["Identifier les équipements éligibles", "Communiquer le planning aux utilisateurs", "Planifier les rendez-vous de remplacement", "Effacer et récupérer l'ancien équipement", "Clôturer le dossier"], pointsVigilance: "Ne jamais effacer un équipement sans confirmation écrite de l'utilisateur.", interlocuteurs: ["Équipe Change", "Équipe comptoir"], liens: [] },
+    { titre: "Mise à jour forcée fictive (Android)", type: "Procédure technique", resume: "Déclenchement d'une mise à jour forcée via un outil fictif MDM-Test.", prerequis: "Accès à la console MDM-Test.", etapes: ["Se connecter à MDM-Test", "Sélectionner le groupe d'appareils", "Lancer la commande de mise à jour", "Vérifier la remontée de statut sous 24h"], pointsVigilance: "Prévenir les utilisateurs 48h avant, certains appareils peuvent redémarrer seuls.", interlocuteurs: ["Support MAM"], liens: [] },
+    { titre: "Présentation générale du MAM fictif", type: "Documentation", resume: "Vue d'ensemble du fonctionnement d'une solution de gestion mobile fictive.", prerequis: "", etapes: [], pointsVigilance: "", interlocuteurs: ["Support MAM", "Ingénierie"], liens: [] },
+    { titre: "Processus de SAV fictif", type: "Processus opérationnel", resume: "Traitement d'une panne matérielle signalée par un utilisateur.", prerequis: "Ticket ouvert avec description du problème.", etapes: ["Qualifier la panne", "Vérifier la garantie", "Créer un dossier SAV", "Suivre l'échange ou la réparation", "Clôturer et informer l'utilisateur"], pointsVigilance: "Un appareil endommagé volontairement suit un circuit différent — voir procédure dédiée.", interlocuteurs: ["Équipe comptoir", "Intégrateur"], liens: [] }
+  ];
+  for (const ex of exemples) {
+    await addDoc(collection(db, "contenus"), {
+      ...ex, statut: "Publié", organisationId: profil.organisationId,
+      auteur: profil.uid, auteurNom: profil.nom,
+      dateCreation: serverTimestamp(), derniereModification: serverTimestamp(),
+      historique: [{ action: "Création (exemple fictif)", auteurNom: profil.nom, date: new Date().toISOString() }]
+    });
+  }
+  await chargerContenus();
+};
+
+// ---------- FICHE DETAIL ----------
+window.ouvrirFiche = function (id) {
+  contenuCourantId = id;
+  const c = contenus.find(x => x.id === id);
+  const peutModifier = profil.role !== "lecteur";
+  document.getElementById("ficheContenu").innerHTML = `
+    <span class="badge ${classeType(c.type)}">${c.type}</span>
+    <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
+    ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge" style="background:#dc2626;">🤖 Généré par IA — non validé</span>` : ""}
+    <h2>${escHtml(c.titre)}</h2>
+    ${(c.origineIA && !c.valideParResponsable && profil.role === "admin") ? `
+      <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
+        <p style="margin:0 0 8px; font-size:13.5px; color:#991b1b;">Ce contenu a été rédigé par l'IA à partir d'une source (voix, texte ou schéma) et n'a pas encore été validé par un responsable.</p>
+        <button class="btn primary" onclick="validerContenu('${id}')">✅ Valider ce contenu</button>
+      </div>
+    ` : ""}
+    ${(c.valideParResponsable && c.origineIA) ? `<p class="info">✅ Validé par ${escHtml(c.valideParNom || "un responsable")}</p>` : ""}
+    <div class="champ-lecture"><label>Résumé</label><div>${escHtml(c.resume)}</div></div>
+    ${c.prerequis ? `<div class="champ-lecture"><label>Prérequis</label><div>${escHtml(c.prerequis)}</div></div>` : ""}
+    ${(c.etapes && c.etapes.length) ? `<div class="champ-lecture"><label>Étapes</label><div>${c.etapes.map((e,i)=>`${i+1}. ${escHtml(e)}`).join("<br>")}</div></div>` : ""}
+    ${c.pointsVigilance ? `<div class="champ-lecture"><label>Points de vigilance</label><div class="vigilance">⚠️ ${escHtml(c.pointsVigilance)}</div></div>` : ""}
+    ${(c.interlocuteurs && c.interlocuteurs.length) ? `<div class="champ-lecture"><label>Interlocuteurs</label><div>${c.interlocuteurs.map(escHtml).join(", ")}</div></div>` : ""}
+    ${(c.liens && c.liens.length) ? `<div class="champ-lecture"><label>Liens</label><div>${c.liens.map(l=>`<a href="${escAttr(l)}" target="_blank">${escHtml(l)}</a>`).join("<br>")}</div></div>` : ""}
+    <div class="meta">Créé le ${formatDate(c.dateCreation)} — dernière modification le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom)}</div>
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      ${(c.type !== "Documentation") ? `<button class="btn primary" onclick="ouvrirExecution('${id}')">▶️ Exécuter</button>` : ""}
+      ${peutModifier ? `<button class="btn" onclick="ouvrirModification('${id}')">✏️ Modifier</button>` : ""}
+    </div>
+  `;
+  allerVue("fiche");
+};
+
+window.validerContenu = async function (id) {
+  await updateDoc(doc(db, "contenus", id), {
+    valideParResponsable: true, valideParNom: profil.nom, valideLe: serverTimestamp()
+  });
+  const c = contenus.find(x => x.id === id);
+  c.valideParResponsable = true;
+  c.valideParNom = profil.nom;
+  afficherBanniereValidation();
+  ouvrirFiche(id);
+};
+
+// ---------- EXECUTION ----------
+window.ouvrirExecution = function (id) {
+  const c = contenus.find(x => x.id === id);
+  const etapesHtml = (c.etapes || []).map((e, i) => `
+    <div class="checklist-item" id="etape-${i}">
+      <input type="checkbox" onchange="toggleEtape(${i})">
+      <span>${escHtml(e)}</span>
+    </div>
+  `).join("");
+  const exceptionsHtml = (c.exceptions || []).map(e => `
+    <div class="card" style="background:#fffbeb; border-color:#fde68a; padding:12px 14px; margin-bottom:8px;">
+      <div style="font-size:13.5px;">${escHtml(e.texte)}</div>
+      <div class="meta" style="border:none; padding:4px 0 0;">Signalée par ${escHtml(e.auteurNom)} le ${new Date(e.date).toLocaleDateString("fr-FR")}</div>
+    </div>
+  `).join("");
+  document.getElementById("executerContenu").innerHTML = `
+    <h2>▶️ Exécution — ${escHtml(c.titre)}</h2>
+    ${c.pointsVigilance ? `<div class="vigilance" style="margin-bottom:14px;">⚠️ ${escHtml(c.pointsVigilance)}</div>` : ""}
+    <div>${etapesHtml || "<p class='info'>Aucune étape détaillée pour ce contenu.</p>"}</div>
+    <div style="margin-top:20px; border-top:1px solid #eee; padding-top:16px;">
+      <label>Exceptions déjà signalées sur ce contenu</label>
+      ${exceptionsHtml || `<p class="info">Aucune exception signalée pour l'instant.</p>`}
+      <label>Signaler une nouvelle situation hors du cadre standard</label>
+      <p>Micro : <span id="micStatusExc" style="color:#999;">inactif</span>
+        <button class="btn" id="btnMicExcStart" style="padding:4px 10px; margin-left:8px;">🎤</button>
+        <button class="btn" id="btnMicExcStop" style="padding:4px 10px;" disabled>■</button>
+      </p>
+      <textarea id="exceptionTexte" placeholder="Décris ce qui sort du standard, à l'écrit ou à l'oral..."></textarea>
+      <button class="btn primary" style="margin-top:8px;" onclick="signalerException('${id}')">Signaler l'exception</button>
+      <p class="info" id="exceptionStatut"></p>
+    </div>
+    <p class="info" style="margin-top:14px;">La checklist cochée reste liée à ta session (non sauvegardée) — mais les exceptions, elles, sont enregistrées et restent visibles ici. Le processus de référence n'est jamais modifié automatiquement.</p>
+  `;
+  attacherMicExceptions();
+  allerVue("executer");
+};
+window.toggleEtape = function (i) {
+  document.getElementById("etape-" + i).classList.toggle("coche");
+};
+window.signalerException = async function (id) {
+  const texteEl = document.getElementById("exceptionTexte");
+  const texte = texteEl.value.trim();
+  const statutEl = document.getElementById("exceptionStatut");
+  if (!texte) return;
+  statutEl.textContent = "Enregistrement...";
+  try {
+    const nouvelleException = { texte, auteurNom: profil.nom, date: new Date().toISOString() };
+    await updateDoc(doc(db, "contenus", id), { exceptions: arrayUnion(nouvelleException) });
+    const c = contenus.find(x => x.id === id);
+    c.exceptions = [...(c.exceptions || []), nouvelleException];
+    statutEl.textContent = "✅ Exception enregistrée. Le processus de référence n'a pas été modifié.";
+    texteEl.value = "";
+    ouvrirExecution(id);
+  } catch (err) {
+    statutEl.textContent = "Erreur d'enregistrement : " + err.message;
+  }
+};
+function attacherMicExceptions() {
+  if (!SpeechRecognition) { document.getElementById("btnMicExcStart").disabled = true; return; }
+  const r = new SpeechRecognition();
+  r.lang = "fr-FR"; r.continuous = true; r.interimResults = true;
+  r.onstart = () => {
+    document.getElementById("micStatusExc").textContent = "actif — parle";
+    document.getElementById("micStatusExc").className = "actif";
+    document.getElementById("btnMicExcStart").disabled = true;
+    document.getElementById("btnMicExcStop").disabled = false;
+  };
+  r.onresult = (event) => {
+    const t = document.getElementById("exceptionTexte");
+    let base = t.dataset.base || "", interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const txt = event.results[i][0].transcript;
+      if (event.results[i].isFinal) base += txt + " "; else interim += txt;
+    }
+    t.dataset.base = base;
+    t.value = base + interim;
+  };
+  r.onend = () => {
+    document.getElementById("micStatusExc").textContent = "inactif";
+    document.getElementById("micStatusExc").className = "";
+    document.getElementById("btnMicExcStart").disabled = false;
+    document.getElementById("btnMicExcStop").disabled = true;
+  };
+  document.getElementById("btnMicExcStart").onclick = () => { document.getElementById("exceptionTexte").dataset.base = ""; r.start(); };
+  document.getElementById("btnMicExcStop").onclick = () => r.stop();
+}
+
+// ---------- CREATION / MODIFICATION (voix + Gemini) ----------
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.lang = "fr-FR";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onstart = () => {
+    document.getElementById("micStatus").textContent = "actif — parle maintenant";
+    document.getElementById("micStatus").className = "actif";
+    document.getElementById("btnMicStart").disabled = true;
+    document.getElementById("btnMicStop").disabled = false;
+    document.getElementById("btnMicCancel").disabled = false;
+  };
+  recognition.onresult = (event) => {
+    const t = document.getElementById("transcription");
+    let base = t.dataset.base || "", interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const txt = event.results[i][0].transcript;
+      if (event.results[i].isFinal) base += txt + " "; else interim += txt;
+    }
+    t.dataset.base = base;
+    t.value = base + interim;
+  };
+  recognition.onend = () => {
+    document.getElementById("micStatus").textContent = "inactif";
+    document.getElementById("micStatus").className = "";
+    document.getElementById("btnMicStart").disabled = false;
+    document.getElementById("btnMicStop").disabled = true;
+    document.getElementById("btnMicCancel").disabled = true;
+  };
+} else {
+  document.getElementById("btnMicStart").disabled = true;
+  document.getElementById("micStatus").textContent = "non disponible (utilise Chrome ou Edge)";
+}
+document.getElementById("btnMicStart").onclick = () => {
+  const t = document.getElementById("transcription");
+  t.dataset.base = t.value ? t.value + " " : "";
+  recognition && recognition.start();
+};
+document.getElementById("btnMicStop").onclick = () => recognition && recognition.stop();
+document.getElementById("btnMicCancel").onclick = () => {
+  recognition && recognition.abort();
+  document.getElementById("transcription").value = "";
+  document.getElementById("transcription").dataset.base = "";
+};
+document.getElementById("btnMicRestart").onclick = () => {
+  document.getElementById("transcription").value = "";
+  document.getElementById("transcription").dataset.base = "";
+  document.getElementById("formulaireContenu").classList.add("hidden");
+};
+
+let contenuEnEdition = null;
+let dernierGenereParIA = false;
+function prepareFormulaireNouveau() {
+  contenuEnEdition = null;
+  dernierGenereParIA = false;
+  document.getElementById("creerTitre").textContent = "Nouveau contenu";
+  document.getElementById("transcription").value = "";
+  document.getElementById("formulaireContenu").classList.add("hidden");
+  document.getElementById("genererStatus").textContent = "";
+}
+window.ouvrirModification = function (id) {
+  const c = contenus.find(x => x.id === id);
+  contenuEnEdition = id;
+  allerVue("creer");
+  document.getElementById("creerTitre").textContent = "Modifier : " + c.titre;
+  remplirFormulaire(c);
+  document.getElementById("formulaireContenu").classList.remove("hidden");
+};
+
+const PROMPT_SYSTEME = `Tu structures une explication orale fictive en fiche de processus opérationnel.
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, avec exactement ces clés :
+titre (string), type (un parmi "Processus opérationnel", "Procédure technique", "Documentation"),
+categorie (string ou null), resume (string court), prerequis (string ou null),
+etapes (tableau de strings), pointsVigilance (string ou null),
+interlocuteurs (tableau de strings), liens (tableau de strings),
+informationsManquantes (tableau de strings).
+N'invente aucune information métier précise absente du texte : signale-la plutôt dans informationsManquantes.
+
+Texte fourni :
+"""`;
+
+document.getElementById("btnGenererBrouillon").onclick = async () => {
+  const texte = document.getElementById("transcription").value.trim();
+  const statusEl = document.getElementById("genererStatus");
+  if (!texte) { statusEl.textContent = "Explique un processus ou tape un texte d'abord."; return; }
+  statusEl.textContent = "Génération en cours...";
+  try {
+    const result = await model.generateContent(PROMPT_SYSTEME + texte + `"""`);
+    const raw = result.response.text();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Réponse IA non structurée.");
+    remplirFormulaire(JSON.parse(match[0]));
+    document.getElementById("formulaireContenu").classList.remove("hidden");
+    statusEl.textContent = "Brouillon généré — relis et corrige avant d'enregistrer.";
+    dernierGenereParIA = true;
+  } catch (err) {
+    statusEl.textContent = "Erreur : " + err.message;
+  }
+};
+
+// --- Import d'un schéma (Miro export en image ou PDF) ---
+function fichierEnBase64(fichier) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(fichier);
+  });
+}
+const dropzoneMiro = document.getElementById("dropzoneMiro");
+const inputMiro = document.getElementById("inputMiro");
+dropzoneMiro.onclick = () => inputMiro.click();
+dropzoneMiro.ondragover = (e) => { e.preventDefault(); dropzoneMiro.classList.add("survol"); };
+dropzoneMiro.ondragleave = () => dropzoneMiro.classList.remove("survol");
+dropzoneMiro.ondrop = (e) => {
+  e.preventDefault();
+  dropzoneMiro.classList.remove("survol");
+  if (e.dataTransfer.files.length) {
+    inputMiro.files = e.dataTransfer.files;
+    analyserSchema(e.dataTransfer.files[0]);
+  }
+};
+inputMiro.onchange = () => { if (inputMiro.files[0]) analyserSchema(inputMiro.files[0]); };
+
+async function analyserSchema(fichier) {
+  const statusEl = document.getElementById("genererStatus");
+  document.getElementById("miroFichierNom").textContent = "Fichier sélectionné : " + fichier.name;
+  const typesLisibles = ["application/pdf"];
+  const estImage = fichier.type.startsWith("image/");
+  if (!estImage && !typesLisibles.includes(fichier.type)) {
+    statusEl.textContent = "Ce format (" + (fichier.name.split(".").pop() || fichier.type) + ") n'est pas encore analysable directement. Exporte ton fichier Word/PowerPoint en PDF, ou fais une capture d'écran du schéma, puis réimporte.";
+    return;
+  }
+  statusEl.textContent = "Analyse du schéma en cours (expérimental)...";
+  try {
+    const base64 = await fichierEnBase64(fichier);
+    const promptImage = `Tu regardes l'export d'un schéma de processus (type Miro), fictif. Décris ce que tu vois et structure-le en fiche de processus.
+Réponds UNIQUEMENT avec un objet JSON valide, avec exactement ces clés :
+titre, type (un parmi "Processus opérationnel", "Procédure technique", "Documentation"),
+categorie, resume, prerequis, etapes (tableau), pointsVigilance,
+interlocuteurs (tableau), liens (tableau), informationsManquantes (tableau).
+Si le schéma est illisible ou incomplet, dis-le clairement dans informationsManquantes plutôt que d'inventer.`;
+    const result = await model.generateContent([
+      { text: promptImage },
+      { inlineData: { mimeType: fichier.type || "image/png", data: base64 } }
+    ]);
+    const raw = result.response.text();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Réponse IA non structurée.");
+    remplirFormulaire(JSON.parse(match[0]));
+    document.getElementById("formulaireContenu").classList.remove("hidden");
+    statusEl.textContent = "Brouillon généré à partir du schéma — relis attentivement, cette fonction est expérimentale.";
+    dernierGenereParIA = true;
+  } catch (err) {
+    statusEl.textContent = "Import du schéma indisponible pour l'instant (" + err.message + ") — fonctionnalité expérimentale, saisis manuellement en attendant.";
+  }
+}
+
+function remplirFormulaire(b) {
+  document.getElementById("f_titre").value = b.titre || "";
+  document.getElementById("f_type").value = b.type || "Processus opérationnel";
+  document.getElementById("f_categorie").value = b.categorie || "";
+  document.getElementById("f_resume").value = b.resume || "";
+  document.getElementById("f_prerequis").value = b.prerequis || "";
+  document.getElementById("f_etapes").value = (b.etapes || []).join("\n");
+  document.getElementById("f_vigilance").value = b.pointsVigilance || "";
+  document.getElementById("f_interlocuteurs").value = (b.interlocuteurs || []).join(", ");
+  document.getElementById("f_liens").value = (b.liens || []).join(", ");
+  document.getElementById("f_manquant").value = (b.informationsManquantes || []).join("\n");
+}
+
+function lireFormulaire() {
+  return {
+    titre: document.getElementById("f_titre").value,
+    type: document.getElementById("f_type").value,
+    categorie: document.getElementById("f_categorie").value,
+    resume: document.getElementById("f_resume").value,
+    prerequis: document.getElementById("f_prerequis").value,
+    etapes: document.getElementById("f_etapes").value.split("\n").map(s=>s.trim()).filter(Boolean),
+    pointsVigilance: document.getElementById("f_vigilance").value,
+    interlocuteurs: document.getElementById("f_interlocuteurs").value.split(",").map(s=>s.trim()).filter(Boolean),
+    liens: document.getElementById("f_liens").value.split(",").map(s=>s.trim()).filter(Boolean)
+  };
+}
+
+async function sauvegarder(statut) {
+  const erreurEl = document.getElementById("saveErreur");
+  const donnees = lireFormulaire();
+  if (!donnees.titre) { erreurEl.textContent = "Le titre est obligatoire."; return; }
+  try {
+    if (contenuEnEdition) {
+      await updateDoc(doc(db, "contenus", contenuEnEdition), {
+        ...donnees, statut, derniereModification: serverTimestamp(),
+        auteurNom: profil.nom,
+        historique: arrayUnion({ action: "Modification", auteurNom: profil.nom, date: new Date().toISOString() })
+      });
+    } else {
+      await addDoc(collection(db, "contenus"), {
+        ...donnees, statut, organisationId: profil.organisationId,
+        auteur: profil.uid, auteurNom: profil.nom,
+        dateCreation: serverTimestamp(), derniereModification: serverTimestamp(),
+        historique: [{ action: "Création", auteurNom: profil.nom, date: new Date().toISOString() }],
+        origineIA: dernierGenereParIA,
+        valideParResponsable: !dernierGenereParIA
+      });
+    }
+    await chargerContenus();
+    allerVue("catalogue");
+  } catch (err) {
+    erreurEl.textContent = "Erreur d'enregistrement : " + err.message;
+  }
+}
+document.getElementById("btnSauvegarderBrouillon").onclick = () => sauvegarder("Brouillon");
+document.getElementById("btnPublier").onclick = () => sauvegarder("Publié");
+
+document.getElementById("btnRemplirManuel").onclick = () => {
+  remplirFormulaire({});
+  document.getElementById("formulaireContenu").classList.remove("hidden");
+  document.getElementById("genererStatus").textContent = "Formulaire vierge — remplis-le directement, sans IA.";
+};
+
+// ---------- ASSISTANT QUESTIONS/REPONSES (Expérience B) ----------
+const PROMPT_ASSISTANT = `Tu es un assistant qui répond aux questions d'une équipe UNIQUEMENT à partir des contenus fournis ci-dessous (fictifs). Ne réponds jamais avec une information absente de ces contenus, n'invente jamais un contact, un outil ou une règle.
+Réponds en JSON uniquement, avec ces clés :
+reponse (string, réponse claire et courte),
+confiance ("haute", "moyenne" ou "faible"),
+sourcesUtilisees (tableau des titres exacts des contenus utilisés, vide si aucun),
+aucuneReponse (booléen, true si aucun contenu ne permet de répondre).
+
+Contenus disponibles (JSON) :
+`;
+
+document.getElementById("btnPoserQuestion").onclick = poserQuestion;
+document.getElementById("chatQuestion").addEventListener("keydown", (e) => { if (e.key === "Enter") poserQuestion(); });
+
+async function poserQuestion() {
+  const input = document.getElementById("chatQuestion");
+  const question = input.value.trim();
+  if (!question) return;
+  const histo = document.getElementById("chatHistorique");
+  histo.innerHTML += `<div class="chat-bulle question">${escHtml(question)}</div>`;
+  input.value = "";
+  const idBulle = "reponse-" + Date.now();
+  histo.innerHTML += `<div class="chat-bulle reponse" id="${idBulle}">Recherche en cours...</div>`;
+  histo.scrollIntoView({ behavior: "smooth", block: "end" });
+
+  const contenusPublies = contenus.filter(c => c.statut === "Publié").map(c => ({
+    titre: c.titre, type: c.type, resume: c.resume, prerequis: c.prerequis,
+    etapes: c.etapes, pointsVigilance: c.pointsVigilance, interlocuteurs: c.interlocuteurs
+  }));
+
+  try {
+    const result = await model.generateContent(PROMPT_ASSISTANT + JSON.stringify(contenusPublies) + `\n\nQuestion : "${question}"`);
+    const raw = result.response.text();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Réponse IA non structurée.");
+    const r = JSON.parse(match[0]);
+    const sources = (r.sourcesUtilisees || []).map(titre => {
+      const c = contenus.find(x => x.titre === titre);
+      return c ? `<span class="chip-source" onclick="ouvrirFiche('${c.id}')">📄 ${escHtml(titre)}</span>` : "";
+    }).join("");
+    document.getElementById(idBulle).innerHTML = `
+      ${r.aucuneReponse ? "🤷 Aucun contenu de la base ne permet de répondre avec certitude à cette question." : escHtml(r.reponse)}
+      ${!r.aucuneReponse ? `<div class="info">Confiance : ${r.confiance}</div>` : ""}
+      ${sources ? `<div class="sources">${sources}</div>` : ""}
+    `;
+  } catch (err) {
+    document.getElementById(idBulle).innerHTML = "Erreur : " + escHtml(err.message);
+  }
+}
+
+// Micro pour poser une question à l'oral
+let recognitionChat = null;
+if (SpeechRecognition) {
+  recognitionChat = new SpeechRecognition();
+  recognitionChat.lang = "fr-FR";
+  recognitionChat.onstart = () => {
+    document.getElementById("micStatusChat").textContent = "actif — parle";
+    document.getElementById("micStatusChat").className = "actif";
+    document.getElementById("btnMicChatStart").disabled = true;
+    document.getElementById("btnMicChatStop").disabled = false;
+  };
+  recognitionChat.onresult = (event) => {
+    document.getElementById("chatQuestion").value = event.results[0][0].transcript;
+  };
+  recognitionChat.onend = () => {
+    document.getElementById("micStatusChat").textContent = "inactif";
+    document.getElementById("micStatusChat").className = "";
+    document.getElementById("btnMicChatStart").disabled = false;
+    document.getElementById("btnMicChatStop").disabled = true;
+  };
+  document.getElementById("btnMicChatStart").onclick = () => recognitionChat.start();
+  document.getElementById("btnMicChatStop").onclick = () => recognitionChat.stop();
+} else {
+  document.getElementById("btnMicChatStart").disabled = true;
+}
+
+// ---------- EQUIPE (admin) ----------
+async function chargerEquipe() {
+  document.getElementById("equipeOrg").textContent = profil.organisationId;
+  const q = query(collection(db, "users"), where("organisationId", "==", profil.organisationId));
+  const snap = await getDocs(q);
+  const rows = [];
+  snap.forEach(d => {
+    const u = d.data();
+    rows.push(`<tr>
+      <td>${escHtml(u.nom)}</td><td>${escHtml(u.email)}</td>
+      <td>
+        <select onchange="changerRole('${d.id}', this.value)">
+          <option value="lecteur" ${u.role==='lecteur'?'selected':''}>Lecteur</option>
+          <option value="editeur" ${u.role==='editeur'?'selected':''}>Éditeur</option>
+          <option value="admin" ${u.role==='admin'?'selected':''}>Administrateur</option>
+        </select>
+      </td>
+    </tr>`);
+  });
+  document.getElementById("equipeTableBody").innerHTML = rows.join("");
+}
+window.changerRole = async function (uid, role) {
+  await updateDoc(doc(db, "users", uid), { role });
+};
+</script>
+</body>
+</html>
