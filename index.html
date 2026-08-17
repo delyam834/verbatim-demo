@@ -75,6 +75,8 @@
   .badge.brouillon::before { background: #d97706; }
   .badge.publie { background: #e8f5ee; color: #166534; }
   .badge.publie::before { background: #16a34a; }
+  .badge.avalider { background: #dc2626; color: #fff; }
+  .badge.avalider::before { background: #fff; }
   .legende { font-size: 12px; color: var(--ink-500); margin: 4px 0 22px; display: flex; gap: 20px; flex-wrap: wrap; background: var(--surface-raised); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   .contenu-card { cursor: pointer; transition: box-shadow .15s, border-color .15s; }
@@ -612,7 +614,7 @@ function afficherCatalogue() {
     <div class="card contenu-card ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
       <span class="badge ${classeType(c.type)}">${c.type}</span>
       <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
-      ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge" style="background:#dc2626;">🤖 À valider</span>` : ""}
+      ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">🤖 À valider</span>` : ""}
       <h3>${escHtml(c.titre)}</h3>
       <p>${escHtml(c.resume || "")}</p>
       <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}</div>
@@ -635,7 +637,7 @@ function afficherBanniereValidation() {
 }
 window.filtrerAValider = function () {
   filtreType = "AValider";
-  document.querySelectorAll(".filtre-btn").forEach(x => x.classList.toggle("active", x.dataset.filtre === "AValider"));
+  document.querySelectorAll(".filtre-btn[data-filtre]").forEach(x => x.classList.toggle("active", x.dataset.filtre === "AValider"));
   afficherCatalogue();
 };
 function classeType(t) {
@@ -651,9 +653,9 @@ function escHtml(s) { return String(s || "").replace(/</g, "&lt;"); }
 function escAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
 
 document.getElementById("recherche").oninput = afficherCatalogue;
-document.querySelectorAll(".filtre-btn").forEach(b => b.onclick = () => {
+document.querySelectorAll(".filtre-btn[data-filtre]").forEach(b => b.onclick = () => {
   filtreType = b.dataset.filtre;
-  document.querySelectorAll(".filtre-btn").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".filtre-btn[data-filtre]").forEach(x => x.classList.remove("active"));
   b.classList.add("active");
   afficherCatalogue();
 });
@@ -684,7 +686,7 @@ window.ouvrirFiche = function (id) {
   document.getElementById("ficheContenu").innerHTML = `
     <span class="badge ${classeType(c.type)}">${c.type}</span>
     <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
-    ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge" style="background:#dc2626;">🤖 Généré par IA — non validé</span>` : ""}
+    ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">🤖 Généré par IA — non validé</span>` : ""}
     <h2>${escHtml(c.titre)}</h2>
     ${(c.origineIA && !c.valideParResponsable && profil.role === "admin") ? `
       <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
@@ -1032,11 +1034,12 @@ document.getElementById("btnRemplirManuel").onclick = () => {
 
 // ---------- ASSISTANT QUESTIONS/REPONSES (Expérience B) ----------
 const PROMPT_ASSISTANT = `Tu es un assistant qui répond aux questions d'une équipe UNIQUEMENT à partir des contenus fournis ci-dessous (fictifs). Ne réponds jamais avec une information absente de ces contenus, n'invente jamais un contact, un outil ou une règle.
+Sois bref et direct : 2 à 4 phrases maximum, va droit au but, pas d'introduction ni de reformulation de la question, pas de liste sauf si l'utilisateur demande explicitement une énumération d'étapes.
 Réponds en JSON uniquement, avec ces clés :
-reponse (string, réponse claire et courte),
+reponse (string, réponse courte et directe, 2-4 phrases maximum),
 confiance ("haute", "moyenne" ou "faible"),
 sourcesUtilisees (tableau des titres exacts des contenus utilisés, vide si aucun),
-aucuneReponse (booléen, true si aucun contenu ne permet de répondre).
+aucuneReponse (booléen, true si aucun contenu ne permet de répondre — dans ce cas le dire honnêtement en une phrase, sans inventer).
 
 Contenus disponibles (JSON) :
 `;
