@@ -386,13 +386,19 @@
   <section id="vueReunion" class="hidden">
     <div class="card">
       <h2>📝 Analyser une réunion</h2>
-      <p class="info" style="margin-bottom:16px;">Colle ou importe un compte-rendu de réunion : l'IA le compare aux contenus déjà publiés de ton organisation et propose des modifications ciblées, avec justification. Rien n'est jamais modifié automatiquement — chaque proposition attend ta validation explicite.</p>
+      <p class="info" style="margin-bottom:16px;">Enregistre ou colle un compte-rendu de réunion : l'IA le compare aux contenus déjà publiés de ton organisation et propose des modifications ciblées, avec justification. Rien n'est jamais modifié automatiquement — chaque proposition attend ta validation explicite.</p>
+      <p>Micro : <span id="micStatusReunion" style="color:var(--ink-400);">inactif</span></p>
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button class="btn" id="btnMicReunionStart">🎤 Démarrer</button>
+        <button class="btn" id="btnMicReunionStop" disabled>Arrêter</button>
+        <button class="btn" id="btnMicReunionCancel" disabled>Annuler</button>
+      </div>
       <label style="margin-top:0;">Texte de la réunion</label>
-      <textarea id="transcriptReunion" style="min-height:160px;" placeholder="Colle ici le compte-rendu ou la transcription de la réunion..."></textarea>
+      <textarea id="transcriptReunion" style="min-height:160px;" placeholder="Dicte au micro, colle ici le compte-rendu, ou importe un fichier..."></textarea>
       <div style="display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap;">
         <button class="btn primary" id="btnAnalyserReunion">🔎 Analyser avec l'IA</button>
-        <button class="btn" id="btnImporterTranscript">📎 Importer un fichier .txt</button>
-        <input type="file" id="inputTranscriptReunion" accept=".txt,text/plain" class="hidden">
+        <button class="btn" id="btnImporterTranscript">📎 Importer un fichier .txt ou .docx</button>
+        <input type="file" id="inputTranscriptReunion" accept=".txt,text/plain,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden">
       </div>
       <p class="info" id="analyseReunionStatus"></p>
     </div>
@@ -1264,13 +1270,87 @@ Contenus publiés actuels (JSON) :
 
 let propositionsReunion = [];
 
+// ---------- Micro (dictée du compte-rendu) ----------
+let recognitionReunion = null;
+if (SpeechRecognition) {
+  recognitionReunion = new SpeechRecognition();
+  recognitionReunion.lang = "fr-FR";
+  recognitionReunion.continuous = true;
+  recognitionReunion.interimResults = true;
+  recognitionReunion.onstart = () => {
+    document.getElementById("micStatusReunion").textContent = "actif — parle maintenant";
+    document.getElementById("micStatusReunion").className = "actif";
+    document.getElementById("btnMicReunionStart").disabled = true;
+    document.getElementById("btnMicReunionStop").disabled = false;
+    document.getElementById("btnMicReunionCancel").disabled = false;
+  };
+  recognitionReunion.onresult = (event) => {
+    const t = document.getElementById("transcriptReunion");
+    let base = t.dataset.base || "", interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const txt = event.results[i][0].transcript;
+      if (event.results[i].isFinal) base += txt + " "; else interim += txt;
+    }
+    t.dataset.base = base;
+    t.value = base + interim;
+  };
+  recognitionReunion.onend = () => {
+    document.getElementById("micStatusReunion").textContent = "inactif";
+    document.getElementById("micStatusReunion").className = "";
+    document.getElementById("btnMicReunionStart").disabled = false;
+    document.getElementById("btnMicReunionStop").disabled = true;
+    document.getElementById("btnMicReunionCancel").disabled = true;
+  };
+} else {
+  document.getElementById("btnMicReunionStart").disabled = true;
+  document.getElementById("micStatusReunion").textContent = "non disponible (utilise Chrome ou Edge)";
+}
+document.getElementById("btnMicReunionStart").onclick = () => {
+  const t = document.getElementById("transcriptReunion");
+  t.dataset.base = t.value ? t.value + " " : "";
+  recognitionReunion && recognitionReunion.start();
+};
+document.getElementById("btnMicReunionStop").onclick = () => recognitionReunion && recognitionReunion.stop();
+document.getElementById("btnMicReunionCancel").onclick = () => {
+  recognitionReunion && recognitionReunion.abort();
+  document.getElementById("transcriptReunion").value = "";
+  document.getElementById("transcriptReunion").dataset.base = "";
+};
+
+// ---------- Import de fichier (.txt ou .docx) ----------
+let mammothChargee = null;
+function chargerMammoth() {
+  if (mammothChargee) return mammothChargee;
+  mammothChargee = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js";
+    script.onload = () => resolve(window.mammoth);
+    script.onerror = () => reject(new Error("Impossible de charger le lecteur de fichiers Word (connexion internet requise)."));
+    document.head.appendChild(script);
+  });
+  return mammothChargee;
+}
 document.getElementById("btnImporterTranscript").onclick = () => document.getElementById("inputTranscriptReunion").click();
-document.getElementById("inputTranscriptReunion").onchange = (e) => {
+document.getElementById("inputTranscriptReunion").onchange = async (e) => {
   const fichier = e.target.files[0];
   if (!fichier) return;
+  const statutEl = document.getElementById("analyseReunionStatus");
+  if (fichier.name.toLowerCase().endsWith(".docx")) {
+    statutEl.textContent = "Lecture du fichier Word...";
+    try {
+      const mammoth = await chargerMammoth();
+      const arrayBuffer = await fichier.arrayBuffer();
+      const resultat = await mammoth.extractRawText({ arrayBuffer });
+      document.getElementById("transcriptReunion").value = resultat.value;
+      statutEl.textContent = "";
+    } catch (err) {
+      statutEl.textContent = "Impossible de lire ce fichier Word (les anciens .doc ne sont pas pris en charge — ré-enregistre-le au format .docx) : " + err.message;
+    }
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => { document.getElementById("transcriptReunion").value = reader.result; };
-  reader.onerror = () => { document.getElementById("analyseReunionStatus").textContent = "Impossible de lire ce fichier."; };
+  reader.onerror = () => { statutEl.textContent = "Impossible de lire ce fichier."; };
   reader.readAsText(fichier);
 };
 
