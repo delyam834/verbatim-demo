@@ -1514,10 +1514,15 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
 async function chargerHistoriqueAnalyses() {
   const conteneur = document.getElementById("historiqueAnalyses");
   conteneur.innerHTML = "<p class=\"info\">Chargement...</p>";
-  const q = query(collection(db, "analysesReunion"), where("organisationId", "==", profil.organisationId));
-  const snap = await getDocs(q);
-  analysesHistorique = [];
-  snap.forEach(d => analysesHistorique.push({ id: d.id, ...d.data() }));
+  try {
+    const q = query(collection(db, "analysesReunion"), where("organisationId", "==", profil.organisationId));
+    const snap = await getDocs(q);
+    analysesHistorique = [];
+    snap.forEach(d => analysesHistorique.push({ id: d.id, ...d.data() }));
+  } catch (err) {
+    conteneur.innerHTML = "<p class=\"erreur\">Impossible de charger l'historique des analyses (" + escHtml(err.message) + "). Si l'erreur mentionne une permission refusée, les règles de sécurité Firestore doivent être mises à jour pour la collection analysesReunion.</p>";
+    return;
+  }
   analysesHistorique.sort((a, b) => {
     const ta = a.date && a.date.toMillis ? a.date.toMillis() : 0;
     const tb = b.date && b.date.toMillis ? b.date.toMillis() : 0;
