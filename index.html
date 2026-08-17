@@ -846,7 +846,7 @@ function afficherCatalogue() {
   const grille = document.getElementById("grilleCatalogue");
   const filtres = contenus.filter(c => {
     const matchType = filtreType === "Tous" || c.type === filtreType
-                     || (filtreType === "AValider" && c.origineIA && !c.valideParResponsable);
+                     || (filtreType === "AValider" && estAValider(c));
     const texte = (c.titre + " " + (c.resume||"") + " " + (c.etapes||[]).join(" ")).toLowerCase();
     return matchType && texte.includes(recherche);
   });
@@ -857,7 +857,7 @@ function afficherCatalogue() {
     <div class="card contenu-card ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
       <span class="badge ${classeType(c.type)}">${c.type}</span>
       <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
-      ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">À valider</span>` : ""}
+      ${estAValider(c) ? `<span class="badge avalider">À valider</span>` : ""}
       <h3>${escHtml(c.titre)}</h3>
       <p>${escHtml(c.resume || "")}</p>
       <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}</div>
@@ -869,11 +869,11 @@ function afficherCatalogue() {
 function afficherBanniereValidation() {
   const banniere = document.getElementById("banniereValidation");
   if (profil.role === "lecteur") { banniere.classList.add("hidden"); return; }
-  const nb = contenus.filter(c => c.origineIA && !c.valideParResponsable).length;
+  const nb = contenus.filter(estAValider).length;
   if (nb > 0) {
     banniere.classList.remove("hidden");
     document.getElementById("banniereValidationTexte").textContent =
-      nb + " contenu" + (nb > 1 ? "s" : "") + " généré" + (nb > 1 ? "s" : "") + " par l'IA en attente de validation par un responsable";
+      nb + " contenu" + (nb > 1 ? "s" : "") + " en attente de validation par un responsable";
   } else {
     banniere.classList.add("hidden");
   }
@@ -887,6 +887,22 @@ function classeType(t) {
   if (t === "Processus opérationnel") return "processus";
   if (t === "Procédure technique") return "procedure";
   return "documentation";
+}
+function estAValider(c) {
+  return (c.origineIA && !c.valideParResponsable) || !!c.propositionEnAttente;
+}
+function rendreDiffChamps(c, champsProposes) {
+  return Object.keys(champsProposes || {}).map(champ => {
+    const ancienne = c ? c[champ] : null;
+    const ancienTxt = Array.isArray(ancienne) ? ancienne.join(" · ") : (ancienne || "—");
+    const nouvelle = champsProposes[champ];
+    const nouvelleTxt = Array.isArray(nouvelle) ? nouvelle.join(" · ") : nouvelle;
+    return `<div style="margin-top:10px;">
+      <div style="font-size:11px; font-weight:700; color:var(--ink-400); text-transform:uppercase; letter-spacing:.3px;">${escHtml(champ)}</div>
+      <div style="font-size:13px; color:var(--ink-400); text-decoration:line-through;">${escHtml(ancienTxt)}</div>
+      <div style="font-size:13.5px; color:var(--ink);">${escHtml(nouvelleTxt)}</div>
+    </div>`;
+  }).join("");
 }
 function formatDate(ts) {
   if (!ts || !ts.toDate) return "à l'instant";
@@ -931,11 +947,24 @@ window.ouvrirFiche = function (id) {
     <span class="badge ${classeType(c.type)}">${c.type}</span>
     <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
     ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">Généré par IA — non validé</span>` : ""}
+    ${c.propositionEnAttente ? `<span class="badge avalider">Modification proposée</span>` : ""}
     <h2>${escHtml(c.titre)}</h2>
     ${(c.origineIA && !c.valideParResponsable && profil.role === "admin") ? `
       <div class="no-print" style="background:var(--brand-signal-tint); border:1px solid transparent; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
         <p style="margin:0 0 8px; font-size:13.5px; color:var(--brand-signal);">Ce contenu a été rédigé par l'IA à partir d'une source (voix, texte ou schéma) et n'a pas encore été validé par un responsable.</p>
         <button class="btn primary" onclick="validerContenu('${id}')">Valider ce contenu</button>
+      </div>
+    ` : ""}
+    ${(c.propositionEnAttente && peutModifier) ? `
+      <div class="no-print" style="background:var(--brand-signal-tint); border:1px solid transparent; padding:14px 16px; border-radius:10px; margin-bottom:16px;">
+        <p style="margin:0 0 4px; font-size:13px; font-weight:700; color:var(--brand-signal);">Modification proposée${c.propositionEnAttente.confiance ? " — confiance " + escHtml(c.propositionEnAttente.confiance) : ""}</p>
+        <p style="margin:0 0 8px; font-size:13.5px; color:var(--ink);">${escHtml(c.propositionEnAttente.nature || "")}</p>
+        <p class="info" style="margin:0;">Justification : ${escHtml(c.propositionEnAttente.justification || "")}</p>
+        ${rendreDiffChamps(c, c.propositionEnAttente.champsProposes)}
+        <div style="margin-top:14px; display:flex; gap:10px;">
+          <button class="btn primary" onclick="appliquerPropositionSurFiche('${id}')">Appliquer cette modification</button>
+          <button class="btn" onclick="rejeterPropositionSurFiche('${id}')">Rejeter la proposition</button>
+        </div>
       </div>
     ` : ""}
     ${(c.valideParResponsable && c.origineIA) ? `<p class="info">Validé par ${escHtml(c.valideParNom || "un responsable")}</p>` : ""}
@@ -962,6 +991,29 @@ window.validerContenu = async function (id) {
   const c = contenus.find(x => x.id === id);
   c.valideParResponsable = true;
   c.valideParNom = profil.nom;
+  afficherBanniereValidation();
+  ouvrirFiche(id);
+};
+
+window.appliquerPropositionSurFiche = async function (id) {
+  const c = contenus.find(x => x.id === id);
+  if (!c || !c.propositionEnAttente) return;
+  const champs = c.propositionEnAttente.champsProposes || {};
+  await updateDoc(doc(db, "contenus", id), {
+    ...champs,
+    propositionEnAttente: null,
+    derniereModification: serverTimestamp(),
+    historique: arrayUnion({ action: "Modification proposée par l'IA (analyse de réunion), appliquée par " + profil.nom, auteurNom: profil.nom, date: new Date().toISOString() })
+  });
+  Object.assign(c, champs);
+  c.propositionEnAttente = null;
+  afficherBanniereValidation();
+  ouvrirFiche(id);
+};
+window.rejeterPropositionSurFiche = async function (id) {
+  await updateDoc(doc(db, "contenus", id), { propositionEnAttente: null });
+  const c = contenus.find(x => x.id === id);
+  if (c) c.propositionEnAttente = null;
   afficherBanniereValidation();
   ouvrirFiche(id);
 };
@@ -1419,27 +1471,16 @@ function afficherPropositionsReunion() {
   const resultatsEl = document.getElementById("resultatsReunion");
   resultatsEl.innerHTML = propositionsReunion.map((p, i) => {
     const c = contenus.find(x => x.titre === p.titreContenu);
-    const champs = p.champsProposes || {};
-    const diffHtml = Object.keys(champs).map(champ => {
-      const ancienne = c ? c[champ] : null;
-      const ancienTxt = Array.isArray(ancienne) ? ancienne.join(" · ") : (ancienne || "—");
-      const nouvelle = champs[champ];
-      const nouvelleTxt = Array.isArray(nouvelle) ? nouvelle.join(" · ") : nouvelle;
-      return `<div style="margin-top:10px;">
-        <div style="font-size:11px; font-weight:700; color:var(--ink-400); text-transform:uppercase; letter-spacing:.3px;">${escHtml(champ)}</div>
-        <div style="font-size:13px; color:var(--ink-400); text-decoration:line-through;">${escHtml(ancienTxt)}</div>
-        <div style="font-size:13.5px; color:var(--ink);">${escHtml(nouvelleTxt)}</div>
-      </div>`;
-    }).join("");
     return `
       <div class="card">
         <span class="badge avalider">Proposition IA</span>
         <h3 style="margin:10px 0 4px; font-size:15px; font-weight:600;">${escHtml(p.titreContenu)}</h3>
         <p class="info" style="margin:0 0 8px;"><strong>${escHtml(p.nature)}</strong>${p.confiance ? " — confiance " + escHtml(p.confiance) : ""}</p>
         <p class="info" style="margin:0;">Justification : ${escHtml(p.justification)}</p>
-        ${diffHtml}
-        <div style="margin-top:14px; display:flex; gap:10px;">
+        ${rendreDiffChamps(c, p.champsProposes)}
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn primary" onclick="appliquerPropositionReunion(${i})">Appliquer cette modification</button>
+          <button class="btn" onclick="enregistrerPropositionCommeBrouillon(${i})">Enregistrer comme brouillon</button>
           <button class="btn" onclick="ignorerPropositionReunion(${i})">Ignorer</button>
         </div>
       </div>
@@ -1464,6 +1505,22 @@ window.appliquerPropositionReunion = async function (i) {
 window.ignorerPropositionReunion = function (i) {
   propositionsReunion.splice(i, 1);
   afficherPropositionsReunion();
+};
+window.enregistrerPropositionCommeBrouillon = async function (i) {
+  const p = propositionsReunion[i];
+  if (!p) return;
+  const c = contenus.find(x => x.titre === p.titreContenu);
+  if (!c) return;
+  const propositionEnAttente = {
+    nature: p.nature || "", confiance: p.confiance || "", justification: p.justification || "",
+    champsProposes: p.champsProposes || {}, date: new Date().toISOString()
+  };
+  await updateDoc(doc(db, "contenus", c.id), { propositionEnAttente });
+  c.propositionEnAttente = propositionEnAttente;
+  propositionsReunion.splice(i, 1);
+  afficherPropositionsReunion();
+  afficherBanniereValidation();
+  ouvrirFiche(c.id);
 };
 
 // ---------- ASSISTANT QUESTIONS/REPONSES (Expérience B) ----------
