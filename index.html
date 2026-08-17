@@ -139,6 +139,10 @@
     color: var(--ink-500); font-size: 13.5px; cursor: pointer; transition: all .15s; background: var(--surface);
   }
   .dropzone.survol { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, white); color: var(--ink); }
+  .galerie-fonds { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .fond-vignette { height: 62px; border-radius: 8px; background-size: cover; background-position: center; cursor: pointer; border: 2px solid transparent; transition: transform .15s, border-color .15s; }
+  .fond-vignette:hover { transform: scale(1.03); }
+  .fond-vignette.selectionnee { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent); }
   .hero {
     background: var(--surface-raised); border: 1px solid var(--line); color: var(--ink);
     border-radius: var(--radius); padding: 24px 26px; margin-bottom: 22px;
@@ -367,12 +371,23 @@
       </div>
 
       <label>Fond de l'application</label>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
         <button class="btn filtre-btn" data-fond="aucun">Aucun (uni)</button>
         <button class="btn filtre-btn" data-fond="degrade">Dégradé doux</button>
         <button class="btn filtre-btn" data-fond="motif">Motif discret</button>
       </div>
-      <label>Ou une image de fond (URL externe — pas de mise en ligne de fichier sur cette version)</label>
+
+      <label>Bibliothèque de fonds</label>
+      <div id="galerieFonds" class="galerie-fonds"></div>
+
+      <label>Ou importer une image depuis ton ordinateur</label>
+      <div class="dropzone" id="dropzoneFond">
+        📎 Glisse une image ici, ou <u>clique pour choisir un fichier</u>
+        <input type="file" id="inputFond" accept="image/*" class="hidden">
+      </div>
+      <p class="info" id="fondUploadStatus"></p>
+
+      <label>Ou une image de fond (URL externe)</label>
       <input type="text" id="fondUrl" placeholder="https://...">
 
       <div style="margin-top:20px;">
@@ -515,6 +530,17 @@ const FONDS_PREDEFINIS = {
   degrade: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, white), color-mix(in srgb, var(--secondary) 10%, white))",
   motif: "repeating-linear-gradient(45deg, color-mix(in srgb, var(--primary) 4%, white) 0 12px, white 12px 24px)"
 };
+const GALERIE_FONDS = [
+  { nom: "Montagnes",       url: "https://picsum.photos/id/1018/1600/900" },
+  { nom: "Forêt",           url: "https://picsum.photos/id/1043/1600/900" },
+  { nom: "Papier texturé",  url: "https://picsum.photos/id/1052/1600/900" },
+  { nom: "Bureau clair",    url: "https://picsum.photos/id/60/1600/900" },
+  { nom: "Ciel doux",       url: "https://picsum.photos/id/1015/1600/900" },
+  { nom: "Minéral",         url: "https://picsum.photos/id/1039/1600/900" }
+];
+let themeOrganisation = null;
+let fondBase64EnAttente = null;
+let fondGalerieUrlEnAttente = null;
 
 function appliquerTheme(t) {
   if (!t) return;
@@ -523,7 +549,15 @@ function appliquerTheme(t) {
   if (t.secondaire) root.setProperty("--secondary", t.secondaire);
   if (t.accent) root.setProperty("--accent", t.accent);
   const fondEl = document.getElementById("fondPersonnalise");
-  if (t.fond && t.fond.startsWith("http")) {
+  if (t.fond === "image" && t.fondBase64) {
+    fondEl.style.background = "";
+    fondEl.style.backgroundImage = `url("${t.fondBase64}")`;
+    fondEl.style.backgroundSize = "cover";
+  } else if (t.fond === "image" && t.fondGalerieUrl) {
+    fondEl.style.background = "";
+    fondEl.style.backgroundImage = `url("${t.fondGalerieUrl}")`;
+    fondEl.style.backgroundSize = "cover";
+  } else if (t.fond && t.fond.startsWith("http")) {
     fondEl.style.background = "";
     fondEl.style.backgroundImage = `url("${t.fond}")`;
     fondEl.style.backgroundSize = "cover";
@@ -538,7 +572,10 @@ function appliquerTheme(t) {
 
 async function chargerEtAppliquerTheme() {
   const snap = await getDoc(doc(db, "organisations", profil.organisationId));
-  if (snap.exists() && snap.data().theme) appliquerTheme(snap.data().theme);
+  if (snap.exists() && snap.data().theme) {
+    themeOrganisation = snap.data().theme;
+    appliquerTheme(themeOrganisation);
+  }
 }
 
 function chargerEcranTheme() {
@@ -552,6 +589,15 @@ function chargerEcranTheme() {
   document.getElementById("couleurPrimaire").value = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#15803d";
   document.getElementById("couleurSecondaire").value = getComputedStyle(document.documentElement).getPropertyValue("--secondary").trim() || "#0d9488";
   document.getElementById("couleurAccent").value = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#b45309";
+
+  fondBase64EnAttente = (themeOrganisation && themeOrganisation.fondBase64) || null;
+  fondGalerieUrlEnAttente = (themeOrganisation && themeOrganisation.fondGalerieUrl) || null;
+  document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(b => {
+    b.classList.toggle("active", !!themeOrganisation && themeOrganisation.fond === b.dataset.fond);
+  });
+  document.getElementById("fondUrl").value = (themeOrganisation && themeOrganisation.fond && themeOrganisation.fond.startsWith("http")) ? themeOrganisation.fond : "";
+  document.getElementById("fondUploadStatus").textContent = "";
+  chargerGalerieFonds();
 }
 window.appliquerThemePredefini = function (t) {
   appliquerTheme(t);
@@ -559,20 +605,100 @@ window.appliquerThemePredefini = function (t) {
 };
 document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(b => {
   b.onclick = () => {
+    fondBase64EnAttente = null;
+    fondGalerieUrlEnAttente = null;
     document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(x => x.classList.remove("active"));
     b.classList.add("active");
     appliquerTheme({ fond: b.dataset.fond });
+    chargerGalerieFonds();
   };
 });
+
+// ---------- Bibliothèque de fonds prédéfinis ----------
+function chargerGalerieFonds() {
+  const conteneur = document.getElementById("galerieFonds");
+  conteneur.innerHTML = GALERIE_FONDS.map(f => `
+    <div class="fond-vignette ${fondGalerieUrlEnAttente === f.url ? 'selectionnee' : ''}" style="background-image:url('${f.url}')" onclick='choisirFondGalerie(${JSON.stringify(f.url)})' title="${f.nom}"></div>
+  `).join("");
+}
+window.choisirFondGalerie = function (url) {
+  fondGalerieUrlEnAttente = url;
+  fondBase64EnAttente = null;
+  document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(x => x.classList.remove("active"));
+  appliquerTheme({ fond: "image", fondGalerieUrl: url });
+  chargerGalerieFonds();
+};
+
+// ---------- Import d'une image de fond depuis l'ordinateur ----------
+function redimensionnerCompresserImage(fichier, maxLargeur = 1280, qualite = 0.65) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = Math.min(1, maxLargeur / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", qualite));
+      };
+      img.onerror = () => reject(new Error("Image illisible."));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
+    reader.readAsDataURL(fichier);
+  });
+}
+const dropzoneFond = document.getElementById("dropzoneFond");
+const inputFond = document.getElementById("inputFond");
+dropzoneFond.onclick = () => inputFond.click();
+dropzoneFond.ondragover = (e) => { e.preventDefault(); dropzoneFond.classList.add("survol"); };
+dropzoneFond.ondragleave = () => dropzoneFond.classList.remove("survol");
+dropzoneFond.ondrop = (e) => {
+  e.preventDefault();
+  dropzoneFond.classList.remove("survol");
+  if (e.dataTransfer.files.length) traiterFichierFond(e.dataTransfer.files[0]);
+};
+inputFond.onchange = () => { if (inputFond.files[0]) traiterFichierFond(inputFond.files[0]); };
+
+async function traiterFichierFond(fichier) {
+  const statutEl = document.getElementById("fondUploadStatus");
+  if (!fichier.type.startsWith("image/")) { statutEl.textContent = "Choisis un fichier image (JPG, PNG...)."; return; }
+  statutEl.textContent = "Traitement de l'image...";
+  try {
+    const dataUri = await redimensionnerCompresserImage(fichier);
+    if (dataUri.length > 700000) {
+      statutEl.textContent = "Image encore trop lourde après compression — essaie une image plus simple ou plus petite.";
+      return;
+    }
+    fondBase64EnAttente = dataUri;
+    fondGalerieUrlEnAttente = null;
+    document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(x => x.classList.remove("active"));
+    appliquerTheme({ fond: "image", fondBase64: dataUri });
+    chargerGalerieFonds();
+    statutEl.textContent = "✅ Image prête — clique sur \"Enregistrer l'apparence\" pour l'appliquer à toute l'équipe.";
+  } catch (err) {
+    statutEl.textContent = "Erreur de traitement de l'image : " + err.message;
+  }
+}
+
 document.getElementById("btnEnregistrerTheme").onclick = async () => {
   const fondActif = document.querySelector("#vueParametres .filtre-btn[data-fond].active");
+  const urlManuelle = document.getElementById("fondUrl").value.trim();
+  let fond, fondBase64 = null, fondGalerieUrl = null;
+  if (fondBase64EnAttente) { fond = "image"; fondBase64 = fondBase64EnAttente; }
+  else if (fondGalerieUrlEnAttente) { fond = "image"; fondGalerieUrl = fondGalerieUrlEnAttente; }
+  else if (urlManuelle) { fond = urlManuelle; }
+  else { fond = fondActif ? fondActif.dataset.fond : "aucun"; }
   const theme = {
     primaire: document.getElementById("couleurPrimaire").value,
     secondaire: document.getElementById("couleurSecondaire").value,
     accent: document.getElementById("couleurAccent").value,
-    fond: document.getElementById("fondUrl").value.trim() || (fondActif ? fondActif.dataset.fond : "aucun")
+    fond, fondBase64, fondGalerieUrl
   };
   await setDoc(doc(db, "organisations", profil.organisationId), { theme, nom: profil.organisationId }, { merge: true });
+  themeOrganisation = theme;
   appliquerTheme(theme);
   document.getElementById("themeStatus").textContent = "✅ Apparence enregistrée pour toute l'organisation.";
 };
