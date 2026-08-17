@@ -191,7 +191,6 @@
     text-align: center; padding: 50px 20px; background: var(--surface-raised); border-radius: var(--radius);
     border: 1px dashed var(--line); color: var(--ink-500);
   }
-  .etat-vide .emoji { font-size: 34px; margin-bottom: 10px; display: block; }
   ::-webkit-scrollbar { width: 9px; }
   ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--ink-400); }
@@ -256,18 +255,18 @@
   </div>
 
   <div class="nav-group-label">Consulter</div>
-  <button class="active" data-vue="catalogue">📚 Catalogue</button>
-  <button data-vue="assistant">💬 Assistant IA</button>
+  <button class="active" data-vue="catalogue">Catalogue</button>
+  <button data-vue="assistant">Assistant IA</button>
 
   <div class="nav-group-label">Créer</div>
-  <button data-vue="creer" id="navCreer">✨ Nouveau contenu</button>
-  <button data-vue="reunion" id="navReunion">📝 Analyser une réunion</button>
+  <button data-vue="creer" id="navCreer">Nouveau contenu</button>
+  <button data-vue="reunion" id="navReunion">Analyser une réunion</button>
 
   <div class="sidebar-spacer"></div>
 
   <div class="nav-group-label" id="navGroupAdmin">Administration</div>
-  <button data-vue="equipe" id="navEquipe">👥 Équipe</button>
-  <button data-vue="parametres" id="navParametres">🎨 Apparence</button>
+  <button data-vue="equipe" id="navEquipe">Équipe</button>
+  <button data-vue="parametres" id="navParametres">Apparence</button>
 
   <div class="sidebar-user">
     <div class="avatar" id="userAvatar"></div>
@@ -285,7 +284,7 @@
   <section id="vueCatalogue">
     <div class="hero">
       <div>
-        <h2 id="heroTitre">Bonjour 👋</h2>
+        <h2 id="heroTitre">Bonjour</h2>
         <p>Retrouve, crée et exécute les processus de ton organisation — capturés en parlant, pas en rédigeant.</p>
       </div>
       <div class="hero-stats">
@@ -294,15 +293,15 @@
       </div>
     </div>
     <div id="banniereValidation" class="hidden" style="background:var(--brand-signal-tint); border:1px solid transparent; color:var(--brand-signal); padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13.5px; font-weight:600; cursor:pointer;" onclick="filtrerAValider()">
-      ⚠️ <span id="banniereValidationTexte"></span> — clique pour filtrer
+      <span id="banniereValidationTexte"></span> — clique pour filtrer
     </div>
     <div class="toolbar">
-      <input type="text" id="recherche" placeholder="🔎 Rechercher un mot-clé...">
+      <input type="text" id="recherche" placeholder="Rechercher un mot-clé...">
       <button class="filtre-btn active" data-filtre="Tous">Tous</button>
       <button class="filtre-btn" data-filtre="Processus opérationnel">Processus</button>
       <button class="filtre-btn" data-filtre="Procédure technique">Procédure</button>
       <button class="filtre-btn" data-filtre="Documentation">Doc</button>
-      <button class="filtre-btn" data-filtre="AValider">🤖 À valider</button>
+      <button class="filtre-btn" data-filtre="AValider">À valider</button>
     </div>
     <div class="legende">
       <span><span class="badge processus">Processus</span> organisation complète, rôles, enchaînement</span>
@@ -334,7 +333,7 @@
       <h2 id="creerTitre">Nouveau contenu</h2>
       <p>Micro : <span id="micStatus" style="color:#999;">inactif</span></p>
       <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <button class="btn" id="btnMicStart">🎤 Démarrer</button>
+        <button class="btn" id="btnMicStart">Démarrer</button>
         <button class="btn" id="btnMicStop" disabled>Arrêter</button>
         <button class="btn" id="btnMicCancel" disabled>Annuler</button>
         <button class="btn" id="btnMicRestart">Recommencer</button>
@@ -342,14 +341,14 @@
       <label>Explique ton processus (voix ou texte)</label>
       <textarea id="transcription" style="min-height:100px;" placeholder="La transcription apparaît ici — tu peux aussi taper directement."></textarea>
       <div class="boutons-creation" style="margin-top:10px;">
-        <button class="btn primary" id="btnGenererBrouillon">✨ Générer le brouillon avec l'IA</button>
-        <button class="btn" id="btnRemplirManuel">✍️ Remplir le formulaire manuellement</button>
+        <button class="btn primary" id="btnGenererBrouillon">Générer le brouillon avec l'IA</button>
+        <button class="btn" id="btnRemplirManuel">Remplir le formulaire manuellement</button>
       </div>
       <div style="margin-top:16px; border-top:1px dashed #e5e7eb; padding-top:14px;">
         <label style="margin-top:0;">Ou importer un schéma existant (Miro, draw.io, PowerPoint, Word, capture d'écran...) — expérimental</label>
         <p class="info" style="margin-top:0;">Fonctionne directement avec une image ou un PDF. Pour un fichier Word/PowerPoint, exporte-le d'abord en PDF ou fais une capture d'écran (Word/PowerPoint : « Fichier → Exporter → PDF »).</p>
         <div class="dropzone" id="dropzoneMiro">
-          📎 Glisse ta capture d'écran ou ton fichier ici, ou <u>clique pour choisir un fichier</u>
+          Glisse ta capture d'écran ou ton fichier ici, ou <u>clique pour choisir un fichier</u>
           <input type="file" id="inputMiro" accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx" class="hidden">
         </div>
         <p class="info" id="miroFichierNom"></p>
@@ -385,19 +384,19 @@
   <!-- ANALYSE DE TRANSCRIPT DE REUNION -->
   <section id="vueReunion" class="hidden">
     <div class="card">
-      <h2>📝 Analyser une réunion</h2>
+      <h2>Analyser une réunion</h2>
       <p class="info" style="margin-bottom:16px;">Enregistre ou colle un compte-rendu de réunion : l'IA le compare aux contenus déjà publiés de ton organisation et propose des modifications ciblées, avec justification. Rien n'est jamais modifié automatiquement — chaque proposition attend ta validation explicite.</p>
       <p>Micro : <span id="micStatusReunion" style="color:var(--ink-400);">inactif</span></p>
       <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <button class="btn" id="btnMicReunionStart">🎤 Démarrer</button>
+        <button class="btn" id="btnMicReunionStart">Démarrer</button>
         <button class="btn" id="btnMicReunionStop" disabled>Arrêter</button>
         <button class="btn" id="btnMicReunionCancel" disabled>Annuler</button>
       </div>
       <label style="margin-top:0;">Texte de la réunion</label>
       <textarea id="transcriptReunion" style="min-height:160px;" placeholder="Dicte au micro, colle ici le compte-rendu, ou importe un fichier..."></textarea>
       <div style="display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap;">
-        <button class="btn primary" id="btnAnalyserReunion">🔎 Analyser avec l'IA</button>
-        <button class="btn" id="btnImporterTranscript">📎 Importer un fichier .txt ou .docx</button>
+        <button class="btn primary" id="btnAnalyserReunion">Analyser avec l'IA</button>
+        <button class="btn" id="btnImporterTranscript">Importer un fichier .txt ou .docx</button>
         <input type="file" id="inputTranscriptReunion" accept=".txt,text/plain,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden">
       </div>
       <p class="info" id="analyseReunionStatus"></p>
@@ -408,11 +407,11 @@
   <!-- ASSISTANT QUESTIONS/REPONSES -->
   <section id="vueAssistant" class="hidden">
     <div class="card">
-      <h2>💬 Assistant de connaissance</h2>
+      <h2>Assistant de connaissance</h2>
       <p class="info" style="margin-bottom:16px;">Pose une question sur les processus de ton entreprise. L'IA ne répond qu'à partir des contenus publiés — jamais en inventant.</p>
       <div id="chatHistorique"></div>
       <p class="info" style="margin:6px 0;">Micro : <span id="micStatusChat" style="color:#999;">inactif</span>
-        <button class="btn" id="btnMicChatStart" style="padding:4px 10px; margin-left:8px;">🎤</button>
+        <button class="btn" id="btnMicChatStart" style="padding:4px 10px; margin-left:8px;">Micro</button>
         <button class="btn" id="btnMicChatStop" style="padding:4px 10px;" disabled>■</button>
       </p>
       <div style="display:flex; gap:10px;">
@@ -425,7 +424,7 @@
   <!-- PARAMETRES (admin) -->
   <section id="vueParametres" class="hidden">
     <div class="card">
-      <h2>🎨 Personnaliser l'apparence</h2>
+      <h2>Personnaliser l'apparence</h2>
       <p class="info" style="margin-bottom:16px;">Visible par toute l'équipe de ton organisation.</p>
 
       <label style="margin-top:0;">Thèmes prédéfinis</label>
@@ -453,7 +452,7 @@
 
       <label>Ou importer une image depuis ton ordinateur</label>
       <div class="dropzone" id="dropzoneFond">
-        📎 Glisse une image ici, ou <u>clique pour choisir un fichier</u>
+        Glisse une image ici, ou <u>clique pour choisir un fichier</u>
         <input type="file" id="inputFond" accept="image/*" class="hidden">
       </div>
       <p class="info" id="fondUploadStatus"></p>
@@ -580,7 +579,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("userEmail").textContent = profil.nom + " (" + profil.email + ")";
   document.getElementById("userRole").textContent = profil.role;
   document.getElementById("userAvatar").textContent = (profil.nom || "?").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
-  document.getElementById("heroTitre").textContent = "Bonjour " + profil.nom.split(" ")[0] + " 👋";
+  document.getElementById("heroTitre").textContent = "Bonjour " + profil.nom.split(" ")[0];
   document.getElementById("navCreer").classList.toggle("hidden", profil.role === "lecteur");
   document.getElementById("navReunion").classList.toggle("hidden", profil.role === "lecteur");
   document.getElementById("navEquipe").classList.toggle("hidden", profil.role !== "admin");
@@ -588,8 +587,27 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("navGroupAdmin").classList.toggle("hidden", profil.role !== "admin");
   await chargerEtAppliquerTheme();
   await chargerContenus();
-  allerVue("catalogue");
+  restaurerDerniereVue();
 });
+
+function restaurerDerniereVue() {
+  const vuesSimples = ["catalogue", "creer", "reunion", "equipe", "assistant", "parametres"];
+  try {
+    const derniereVue = localStorage.getItem("verbatim_derniereVue");
+    if (derniereVue === "fiche" || derniereVue === "executer") {
+      const id = localStorage.getItem("verbatim_dernierContenuId");
+      if (id && contenus.some(c => c.id === id)) {
+        if (derniereVue === "fiche") { ouvrirFiche(id); return; }
+        ouvrirExecution(id);
+        return;
+      }
+    } else if (derniereVue && vuesSimples.includes(derniereVue)) {
+      allerVue(derniereVue);
+      return;
+    }
+  } catch (e) {}
+  allerVue("catalogue");
+}
 
 // ---------- THEME PAR ORGANISATION ----------
 const THEMES_PREDEFINIS = {
@@ -770,7 +788,7 @@ async function traiterFichierFond(fichier) {
     appliquerTheme({ fond: "image", fondBase64: dataUri });
     chargerGalerieFonds();
     mettreAJourApercuFond("image");
-    statutEl.textContent = "✅ Image prête — clique sur \"Enregistrer l'apparence\" pour l'appliquer à toute l'équipe.";
+    statutEl.textContent = "Image prête — clique sur \"Enregistrer l'apparence\" pour l'appliquer à toute l'équipe.";
   } catch (err) {
     statutEl.textContent = "Erreur de traitement de l'image : " + err.message;
   }
@@ -805,6 +823,12 @@ window.allerVue = function (vue) {
   if (vue === "creer") prepareFormulaireNouveau();
   if (vue === "equipe") chargerEquipe();
   if (vue === "parametres") chargerEcranTheme();
+  try {
+    localStorage.setItem("verbatim_derniereVue", vue);
+    if (vue === "fiche" || vue === "executer") {
+      localStorage.setItem("verbatim_dernierContenuId", contenuCourantId || "");
+    }
+  } catch (e) {}
 };
 document.querySelectorAll("nav button[data-vue]").forEach(b => b.onclick = () => allerVue(b.dataset.vue));
 
@@ -838,7 +862,7 @@ function afficherCatalogue() {
       <p>${escHtml(c.resume || "")}</p>
       <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}</div>
     </div>
-  `).join("") : (contenus.length ? `<div class="etat-vide"><span class="emoji">🔍</span>Aucun résultat pour cette recherche.</div>` : "");
+  `).join("") : (contenus.length ? `<div class="etat-vide">Aucun résultat pour cette recherche.</div>` : "");
   afficherBanniereValidation();
 }
 
@@ -911,21 +935,21 @@ window.ouvrirFiche = function (id) {
     ${(c.origineIA && !c.valideParResponsable && profil.role === "admin") ? `
       <div class="no-print" style="background:var(--brand-signal-tint); border:1px solid transparent; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
         <p style="margin:0 0 8px; font-size:13.5px; color:var(--brand-signal);">Ce contenu a été rédigé par l'IA à partir d'une source (voix, texte ou schéma) et n'a pas encore été validé par un responsable.</p>
-        <button class="btn primary" onclick="validerContenu('${id}')">✅ Valider ce contenu</button>
+        <button class="btn primary" onclick="validerContenu('${id}')">Valider ce contenu</button>
       </div>
     ` : ""}
-    ${(c.valideParResponsable && c.origineIA) ? `<p class="info">✅ Validé par ${escHtml(c.valideParNom || "un responsable")}</p>` : ""}
+    ${(c.valideParResponsable && c.origineIA) ? `<p class="info">Validé par ${escHtml(c.valideParNom || "un responsable")}</p>` : ""}
     <div class="champ-lecture"><label>Résumé</label><div>${escHtml(c.resume)}</div></div>
     ${c.prerequis ? `<div class="champ-lecture"><label>Prérequis</label><div>${escHtml(c.prerequis)}</div></div>` : ""}
     ${(c.etapes && c.etapes.length) ? `<div class="champ-lecture"><label>Étapes</label><div>${c.etapes.map((e,i)=>`${i+1}. ${escHtml(e)}`).join("<br>")}</div></div>` : ""}
-    ${c.pointsVigilance ? `<div class="champ-lecture"><label>Points de vigilance</label><div class="vigilance">⚠️ ${escHtml(c.pointsVigilance)}</div></div>` : ""}
+    ${c.pointsVigilance ? `<div class="champ-lecture"><label>Points de vigilance</label><div class="vigilance">${escHtml(c.pointsVigilance)}</div></div>` : ""}
     ${(c.interlocuteurs && c.interlocuteurs.length) ? `<div class="champ-lecture"><label>Interlocuteurs</label><div>${c.interlocuteurs.map(escHtml).join(", ")}</div></div>` : ""}
     ${(c.liens && c.liens.length) ? `<div class="champ-lecture"><label>Liens</label><div>${c.liens.map(l=>`<a href="${escAttr(l)}" target="_blank">${escHtml(l)}</a>`).join("<br>")}</div></div>` : ""}
     <div class="meta">Créé le ${formatDate(c.dateCreation)} — dernière modification le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom)}</div>
     <div class="no-print" style="margin-top:16px; display:flex; gap:10px;">
-      ${(c.type !== "Documentation") ? `<button class="btn primary" onclick="ouvrirExecution('${id}')">▶️ Exécuter</button>` : ""}
-      ${peutModifier ? `<button class="btn" onclick="ouvrirModification('${id}')">✏️ Modifier</button>` : ""}
-      <button class="btn" onclick="window.print()">🖨️ Exporter en PDF</button>
+      ${(c.type !== "Documentation") ? `<button class="btn primary" onclick="ouvrirExecution('${id}')">Exécuter</button>` : ""}
+      ${peutModifier ? `<button class="btn" onclick="ouvrirModification('${id}')">Modifier</button>` : ""}
+      <button class="btn" onclick="window.print()">Exporter en PDF</button>
     </div>
   `;
   allerVue("fiche");
@@ -958,15 +982,15 @@ window.ouvrirExecution = function (id) {
     </div>
   `).join("");
   document.getElementById("executerContenu").innerHTML = `
-    <h2>▶️ Exécution — ${escHtml(c.titre)}</h2>
-    ${c.pointsVigilance ? `<div class="vigilance" style="margin-bottom:14px;">⚠️ ${escHtml(c.pointsVigilance)}</div>` : ""}
+    <h2>Exécution — ${escHtml(c.titre)}</h2>
+    ${c.pointsVigilance ? `<div class="vigilance" style="margin-bottom:14px;">${escHtml(c.pointsVigilance)}</div>` : ""}
     <div>${etapesHtml || "<p class='info'>Aucune étape détaillée pour ce contenu.</p>"}</div>
     <div style="margin-top:20px; border-top:1px solid #eee; padding-top:16px;">
       <label>Exceptions déjà signalées sur ce contenu</label>
       ${exceptionsHtml || `<p class="info">Aucune exception signalée pour l'instant.</p>`}
       <label>Signaler une nouvelle situation hors du cadre standard</label>
       <p>Micro : <span id="micStatusExc" style="color:#999;">inactif</span>
-        <button class="btn" id="btnMicExcStart" style="padding:4px 10px; margin-left:8px;">🎤</button>
+        <button class="btn" id="btnMicExcStart" style="padding:4px 10px; margin-left:8px;">Micro</button>
         <button class="btn" id="btnMicExcStop" style="padding:4px 10px;" disabled>■</button>
       </p>
       <textarea id="exceptionTexte" placeholder="Décris ce qui sort du standard, à l'écrit ou à l'oral..."></textarea>
@@ -992,7 +1016,7 @@ window.signalerException = async function (id) {
     await updateDoc(doc(db, "contenus", id), { exceptions: arrayUnion(nouvelleException) });
     const c = contenus.find(x => x.id === id);
     c.exceptions = [...(c.exceptions || []), nouvelleException];
-    statutEl.textContent = "✅ Exception enregistrée. Le processus de référence n'a pas été modifié.";
+    statutEl.textContent = "Exception enregistrée. Le processus de référence n'a pas été modifié.";
     texteEl.value = "";
     ouvrirExecution(id);
   } catch (err) {
@@ -1411,7 +1435,7 @@ function afficherPropositionsReunion() {
         <p class="info" style="margin:0;">Justification : ${escHtml(p.justification)}</p>
         ${diffHtml}
         <div style="margin-top:14px; display:flex; gap:10px;">
-          <button class="btn primary" onclick="appliquerPropositionReunion(${i})">✅ Appliquer cette modification</button>
+          <button class="btn primary" onclick="appliquerPropositionReunion(${i})">Appliquer cette modification</button>
           <button class="btn" onclick="ignorerPropositionReunion(${i})">Ignorer</button>
         </div>
       </div>
@@ -1477,10 +1501,10 @@ async function poserQuestion() {
     const r = JSON.parse(match[0]);
     const sources = (r.sourcesUtilisees || []).map(titre => {
       const c = contenus.find(x => x.titre === titre);
-      return c ? `<span class="chip-source" onclick="ouvrirFiche('${c.id}')">📄 ${escHtml(titre)}</span>` : "";
+      return c ? `<span class="chip-source" onclick="ouvrirFiche('${c.id}')">${escHtml(titre)}</span>` : "";
     }).join("");
     document.getElementById(idBulle).innerHTML = `
-      ${r.aucuneReponse ? "🤷 Aucun contenu de la base ne permet de répondre avec certitude à cette question." : escHtml(r.reponse)}
+      ${r.aucuneReponse ? "Aucun contenu de la base ne permet de répondre avec certitude à cette question." : escHtml(r.reponse)}
       ${!r.aucuneReponse ? `<div class="info">Confiance : ${r.confiance}</div>` : ""}
       ${sources ? `<div class="sources">${sources}</div>` : ""}
     `;
