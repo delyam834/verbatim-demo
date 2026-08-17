@@ -505,7 +505,7 @@ initializeAppCheck(app, { provider: new ReCaptchaV3Provider("placeholder-non-uti
 const auth = getAuth(app);
 const db = getFirestore(app);
 const ai = getAI(app, { backend: new GoogleAIBackend() });
-const model = getGenerativeModel(ai, { model: "gemini-3.6-flash" });
+const model = getGenerativeModel(ai, { model: "gemini-3.6-flash", generationConfig: { maxOutputTokens: 2048 } });
 
 let profil = null; // { organisationId, role, nom, email }
 let contenus = [];
@@ -1388,7 +1388,7 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
     pointsVigilance: c.pointsVigilance, interlocuteurs: c.interlocuteurs
   }));
   if (!contenusPublies.length) { statutEl.textContent = "Aucun contenu publié dans ton organisation à comparer pour l'instant."; return; }
-  statutEl.textContent = "Analyse en cours...";
+  statutEl.textContent = "Analyse en cours (" + contenusPublies.length + " contenu" + (contenusPublies.length > 1 ? "s" : "") + " comparé" + (contenusPublies.length > 1 ? "s" : "") + ")... cela peut prendre jusqu'à une minute.";
   document.getElementById("resultatsReunion").innerHTML = "";
   try {
     const result = await model.generateContent(PROMPT_REUNION + JSON.stringify(contenusPublies) + `\n\nCompte-rendu de réunion :\n"""\n${texte}\n"""`);
