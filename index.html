@@ -139,7 +139,7 @@
 
   /* --- Identité visuelle calme (refonte v3, inspiration Notion / shadcn) --- */
   body { background: var(--bg); }
-  #fondPersonnalise { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; opacity: .45; }
+  #fondPersonnalise { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; opacity: .6; }
   .logo { display:flex; align-items:center; gap:10px; }
   .logo-mark {
     width: 30px; height: 30px; border-radius: 50%;
@@ -439,6 +439,9 @@
         <button class="btn filtre-btn" data-fond="motif">Motif discret</button>
       </div>
 
+      <label>Aperçu du fond sélectionné</label>
+      <div id="apercuFond" style="height:90px; border-radius:10px; border:1px solid var(--line); background-size:cover; background-position:center;"></div>
+
       <label>Bibliothèque de fonds</label>
       <div id="galerieFonds" class="galerie-fonds"></div>
 
@@ -661,6 +664,7 @@ function chargerEcranTheme() {
   document.getElementById("fondUrl").value = (themeOrganisation && themeOrganisation.fond && themeOrganisation.fond.startsWith("http")) ? themeOrganisation.fond : "";
   document.getElementById("fondUploadStatus").textContent = "";
   chargerGalerieFonds();
+  mettreAJourApercuFond(themeOrganisation ? themeOrganisation.fond : "aucun");
 }
 window.appliquerThemePredefini = function (t) {
   appliquerTheme(t);
@@ -674,8 +678,18 @@ document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(b => 
     b.classList.add("active");
     appliquerTheme({ fond: b.dataset.fond });
     chargerGalerieFonds();
+    mettreAJourApercuFond(b.dataset.fond);
   };
 });
+
+// ---------- Aperçu direct du fond (indépendant de l'opacité du fond global) ----------
+function mettreAJourApercuFond(fond) {
+  const apercu = document.getElementById("apercuFond");
+  if (fondBase64EnAttente) { apercu.style.backgroundImage = `url("${fondBase64EnAttente}")`; return; }
+  if (fondGalerieUrlEnAttente) { apercu.style.backgroundImage = `url("${fondGalerieUrlEnAttente}")`; return; }
+  apercu.style.backgroundImage = "";
+  apercu.style.background = (fond && FONDS_PREDEFINIS[fond]) ? FONDS_PREDEFINIS[fond] : "var(--surface)";
+}
 
 // ---------- Bibliothèque de fonds prédéfinis ----------
 function chargerGalerieFonds() {
@@ -690,6 +704,7 @@ window.choisirFondGalerie = function (url) {
   document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(x => x.classList.remove("active"));
   appliquerTheme({ fond: "image", fondGalerieUrl: url });
   chargerGalerieFonds();
+  mettreAJourApercuFond("image");
 };
 
 // ---------- Import d'une image de fond depuis l'ordinateur ----------
@@ -740,6 +755,7 @@ async function traiterFichierFond(fichier) {
     document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(x => x.classList.remove("active"));
     appliquerTheme({ fond: "image", fondBase64: dataUri });
     chargerGalerieFonds();
+    mettreAJourApercuFond("image");
     statutEl.textContent = "✅ Image prête — clique sur \"Enregistrer l'apparence\" pour l'appliquer à toute l'équipe.";
   } catch (err) {
     statutEl.textContent = "Erreur de traitement de l'image : " + err.message;
