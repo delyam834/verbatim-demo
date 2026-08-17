@@ -922,6 +922,12 @@ function formatDateHeure(iso) {
 }
 function escHtml(s) { return String(s || "").replace(/</g, "&lt;"); }
 function escAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
+function avecDelai(promesse, ms) {
+  return Promise.race([
+    promesse,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Délai dépassé — l'IA n'a pas répondu à temps, réessaie.")), ms))
+  ]);
+}
 function extraireJSON(raw) {
   const match = raw.match(/\{[\s\S]*\}/);
   if (match) {
@@ -1236,7 +1242,7 @@ document.getElementById("btnGenererBrouillon").onclick = async () => {
   if (!texte) { statusEl.textContent = "Explique un processus ou tape un texte d'abord."; return; }
   statusEl.textContent = "Génération en cours...";
   try {
-    const result = await model.generateContent(PROMPT_SYSTEME + texte + `"""`);
+    const result = await avecDelai(model.generateContent(PROMPT_SYSTEME + texte + `"""`), 60000);
     const raw = result.response.text();
     remplirFormulaire(extraireJSON(raw));
     document.getElementById("formulaireContenu").classList.remove("hidden");
@@ -1289,10 +1295,10 @@ titre, type (un parmi "Processus opérationnel", "Procédure technique", "Docume
 categorie, resume, prerequis, etapes (tableau), pointsVigilance,
 interlocuteurs (tableau), liens (tableau), informationsManquantes (tableau).
 Si le schéma est illisible ou incomplet, dis-le clairement dans informationsManquantes plutôt que d'inventer.`;
-    const result = await model.generateContent([
+    const result = await avecDelai(model.generateContent([
       { text: promptImage },
       { inlineData: { mimeType: fichier.type || "image/png", data: base64 } }
-    ]);
+    ]), 60000);
     const raw = result.response.text();
     remplirFormulaire(extraireJSON(raw));
     document.getElementById("formulaireContenu").classList.remove("hidden");
@@ -1482,7 +1488,7 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
   statutEl.textContent = "Analyse en cours (" + contenusPublies.length + " contenu" + (contenusPublies.length > 1 ? "s" : "") + " comparé" + (contenusPublies.length > 1 ? "s" : "") + ")... cela peut prendre jusqu'à une minute.";
   document.getElementById("resultatsReunion").innerHTML = "";
   try {
-    const result = await model.generateContent(PROMPT_REUNION + JSON.stringify(contenusPublies) + `\n\nCompte-rendu de réunion :\n"""\n${texte}\n"""`);
+    const result = await avecDelai(model.generateContent(PROMPT_REUNION + JSON.stringify(contenusPublies) + `\n\nCompte-rendu de réunion :\n"""\n${texte}\n"""`), 60000);
     const raw = result.response.text();
     const r = extraireJSON(raw);
     const normaliserTitre = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -1674,7 +1680,7 @@ async function poserQuestion() {
   }));
 
   try {
-    const result = await model.generateContent(PROMPT_ASSISTANT + JSON.stringify(contenusPublies) + `\n\nQuestion : "${question}"`);
+    const result = await avecDelai(model.generateContent(PROMPT_ASSISTANT + JSON.stringify(contenusPublies) + `\n\nQuestion : "${question}"`), 60000);
     const raw = result.response.text();
     const r = extraireJSON(raw);
     const sources = (r.sourcesUtilisees || []).map(titre => {
