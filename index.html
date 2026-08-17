@@ -1015,8 +1015,8 @@ function prepareFormulaireNouveau() {
 }
 window.ouvrirModification = function (id) {
   const c = contenus.find(x => x.id === id);
-  contenuEnEdition = id;
   allerVue("creer");
+  contenuEnEdition = id;
   document.getElementById("creerTitre").textContent = "Modifier : " + c.titre;
   remplirFormulaire(c);
   document.getElementById("formulaireContenu").classList.remove("hidden");
