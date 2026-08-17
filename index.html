@@ -1278,14 +1278,15 @@ document.getElementById("btnRemplirManuel").onclick = () => {
 };
 
 // ---------- ANALYSE DE TRANSCRIPT DE REUNION ----------
-const PROMPT_REUNION = `Tu compares un compte-rendu de réunion (fictif) avec les processus déjà publiés d'une organisation, pour repérer si la réunion mentionne des changements, corrections ou compléments concrets à apporter à ces processus.
-Ne propose une modification QUE si le compte-rendu contient une information concrète qui contredit, complète ou fait évoluer un processus existant. Si tu n'es pas sûr, ou si rien de pertinent n'est mentionné, laisse le tableau propositions vide plutôt que d'inventer un changement.
-N'invente aucune information métier absente du compte-rendu.
+const PROMPT_REUNION = `Tu compares un compte-rendu de réunion (fictif, parfois issu d'une dictée vocale donc imparfait/décousu) avec les processus déjà publiés d'une organisation, pour repérer si la réunion mentionne des changements, corrections ou compléments à apporter à ces processus.
+Sois attentif même à un lien indirect ou partiel entre le compte-rendu et un contenu existant (même sujet, même outil, même équipe, même type de public visé) : dans ce cas, propose quand même une modification, mais indique clairement ton niveau de confiance ("haute", "moyenne" ou "faible") pour laisser l'humain juger. Ne laisse le tableau propositions vide QUE si vraiment aucun contenu fourni n'a de rapport, même lointain, avec le compte-rendu.
+N'invente jamais une information métier précise (chiffre, nom, procédure) absente du compte-rendu — en cas de doute sur le contenu exact du changement, dis-le dans la justification plutôt que d'inventer.
 
 Réponds UNIQUEMENT avec un objet JSON valide, avec exactement cette clé :
 propositions (tableau d'objets), chaque objet ayant :
   titreContenu (string, titre EXACT d'un des contenus fournis ci-dessous),
   nature (string courte décrivant le changement, ex. "Ajout d'une étape", "Mise à jour d'un point de vigilance"),
+  confiance (string : "haute", "moyenne" ou "faible"),
   justification (string, extrait ou explication tirée du compte-rendu justifiant ce changement),
   champsProposes (objet, uniquement les champs à modifier parmi : resume (string), prerequis (string), etapes (tableau complet mis à jour), pointsVigilance (string), interlocuteurs (tableau complet mis à jour))
 
@@ -1403,9 +1404,12 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
       })
       .filter(Boolean);
     afficherPropositionsReunion();
-    statutEl.textContent = propositionsReunion.length
-      ? propositionsReunion.length + " proposition" + (propositionsReunion.length > 1 ? "s" : "") + " à examiner — rien n'est appliqué sans ta validation."
-      : "Aucun changement pertinent détecté dans ce compte-rendu par rapport aux contenus publiés.";
+    if (propositionsReunion.length) {
+      statutEl.textContent = propositionsReunion.length + " proposition" + (propositionsReunion.length > 1 ? "s" : "") + " à examiner — rien n'est appliqué sans ta validation.";
+    } else {
+      const titres = contenusPublies.map(c => c.titre).join(" · ");
+      statutEl.textContent = "Aucun changement pertinent détecté. Contenus publiés comparés (" + contenusPublies.length + ") : " + titres;
+    }
   } catch (err) {
     statutEl.textContent = "Erreur : " + err.message;
   }
@@ -1431,7 +1435,7 @@ function afficherPropositionsReunion() {
       <div class="card">
         <span class="badge avalider">Proposition IA</span>
         <h3 style="margin:10px 0 4px; font-size:15px; font-weight:600;">${escHtml(p.titreContenu)}</h3>
-        <p class="info" style="margin:0 0 8px;"><strong>${escHtml(p.nature)}</strong></p>
+        <p class="info" style="margin:0 0 8px;"><strong>${escHtml(p.nature)}</strong>${p.confiance ? " — confiance " + escHtml(p.confiance) : ""}</p>
         <p class="info" style="margin:0;">Justification : ${escHtml(p.justification)}</p>
         ${diffHtml}
         <div style="margin-top:14px; display:flex; gap:10px;">
