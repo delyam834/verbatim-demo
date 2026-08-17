@@ -248,6 +248,7 @@
 
   <div class="nav-group-label">Créer</div>
   <button data-vue="creer" id="navCreer">✨ Nouveau contenu</button>
+  <button data-vue="reunion" id="navReunion">📝 Analyser une réunion</button>
 
   <div class="sidebar-spacer"></div>
 
@@ -366,6 +367,23 @@
         <p class="erreur" id="saveErreur"></p>
       </div>
     </div>
+  </section>
+
+  <!-- ANALYSE DE TRANSCRIPT DE REUNION -->
+  <section id="vueReunion" class="hidden">
+    <div class="card">
+      <h2>📝 Analyser une réunion</h2>
+      <p class="info" style="margin-bottom:16px;">Colle ou importe un compte-rendu de réunion : l'IA le compare aux contenus déjà publiés de ton organisation et propose des modifications ciblées, avec justification. Rien n'est jamais modifié automatiquement — chaque proposition attend ta validation explicite.</p>
+      <label style="margin-top:0;">Texte de la réunion</label>
+      <textarea id="transcriptReunion" style="min-height:160px;" placeholder="Colle ici le compte-rendu ou la transcription de la réunion..."></textarea>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+        <button class="btn primary" id="btnAnalyserReunion">🔎 Analyser avec l'IA</button>
+        <button class="btn" id="btnImporterTranscript">📎 Importer un fichier .txt</button>
+        <input type="file" id="inputTranscriptReunion" accept=".txt,text/plain" class="hidden">
+      </div>
+      <p class="info" id="analyseReunionStatus"></p>
+    </div>
+    <div id="resultatsReunion"></div>
   </section>
 
   <!-- ASSISTANT QUESTIONS/REPONSES -->
@@ -542,6 +560,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("userAvatar").textContent = (profil.nom || "?").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
   document.getElementById("heroTitre").textContent = "Bonjour " + profil.nom.split(" ")[0] + " 👋";
   document.getElementById("navCreer").classList.toggle("hidden", profil.role === "lecteur");
+  document.getElementById("navReunion").classList.toggle("hidden", profil.role === "lecteur");
   document.getElementById("navEquipe").classList.toggle("hidden", profil.role !== "admin");
   document.getElementById("navParametres").classList.toggle("hidden", profil.role !== "admin");
   document.getElementById("navGroupAdmin").classList.toggle("hidden", profil.role !== "admin");
@@ -736,7 +755,7 @@ document.getElementById("btnEnregistrerTheme").onclick = async () => {
 
 // ---------- NAVIGATION ----------
 window.allerVue = function (vue) {
-  ["Catalogue","Fiche","Executer","Creer","Equipe","Assistant","Parametres"].forEach(v => {
+  ["Catalogue","Fiche","Executer","Creer","Reunion","Equipe","Assistant","Parametres"].forEach(v => {
     document.getElementById("vue" + v).classList.toggle("hidden", v.toLowerCase() !== vue);
   });
   document.querySelectorAll("nav button[data-vue]").forEach(b => b.classList.toggle("active", b.dataset.vue === vue));
@@ -1189,6 +1208,111 @@ document.getElementById("btnRemplirManuel").onclick = () => {
   remplirFormulaire({});
   document.getElementById("formulaireContenu").classList.remove("hidden");
   document.getElementById("genererStatus").textContent = "Formulaire vierge — remplis-le directement, sans IA.";
+};
+
+// ---------- ANALYSE DE TRANSCRIPT DE REUNION ----------
+const PROMPT_REUNION = `Tu compares un compte-rendu de réunion (fictif) avec les processus déjà publiés d'une organisation, pour repérer si la réunion mentionne des changements, corrections ou compléments concrets à apporter à ces processus.
+Ne propose une modification QUE si le compte-rendu contient une information concrète qui contredit, complète ou fait évoluer un processus existant. Si tu n'es pas sûr, ou si rien de pertinent n'est mentionné, laisse le tableau propositions vide plutôt que d'inventer un changement.
+N'invente aucune information métier absente du compte-rendu.
+
+Réponds UNIQUEMENT avec un objet JSON valide, avec exactement cette clé :
+propositions (tableau d'objets), chaque objet ayant :
+  titreContenu (string, titre EXACT d'un des contenus fournis ci-dessous),
+  nature (string courte décrivant le changement, ex. "Ajout d'une étape", "Mise à jour d'un point de vigilance"),
+  justification (string, extrait ou explication tirée du compte-rendu justifiant ce changement),
+  champsProposes (objet, uniquement les champs à modifier parmi : resume (string), prerequis (string), etapes (tableau complet mis à jour), pointsVigilance (string), interlocuteurs (tableau complet mis à jour))
+
+Contenus publiés actuels (JSON) :
+`;
+
+let propositionsReunion = [];
+
+document.getElementById("btnImporterTranscript").onclick = () => document.getElementById("inputTranscriptReunion").click();
+document.getElementById("inputTranscriptReunion").onchange = (e) => {
+  const fichier = e.target.files[0];
+  if (!fichier) return;
+  const reader = new FileReader();
+  reader.onload = () => { document.getElementById("transcriptReunion").value = reader.result; };
+  reader.onerror = () => { document.getElementById("analyseReunionStatus").textContent = "Impossible de lire ce fichier."; };
+  reader.readAsText(fichier);
+};
+
+document.getElementById("btnAnalyserReunion").onclick = async () => {
+  const texte = document.getElementById("transcriptReunion").value.trim();
+  const statutEl = document.getElementById("analyseReunionStatus");
+  if (!texte) { statutEl.textContent = "Colle ou importe un compte-rendu de réunion d'abord."; return; }
+  const contenusPublies = contenus.filter(c => c.statut === "Publié").map(c => ({
+    titre: c.titre, resume: c.resume, prerequis: c.prerequis, etapes: c.etapes,
+    pointsVigilance: c.pointsVigilance, interlocuteurs: c.interlocuteurs
+  }));
+  if (!contenusPublies.length) { statutEl.textContent = "Aucun contenu publié dans ton organisation à comparer pour l'instant."; return; }
+  statutEl.textContent = "Analyse en cours...";
+  document.getElementById("resultatsReunion").innerHTML = "";
+  try {
+    const result = await model.generateContent(PROMPT_REUNION + JSON.stringify(contenusPublies) + `\n\nCompte-rendu de réunion :\n"""\n${texte}\n"""`);
+    const raw = result.response.text();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Réponse IA non structurée.");
+    const r = JSON.parse(match[0]);
+    propositionsReunion = (r.propositions || []).filter(p => p.titreContenu && contenus.some(c => c.titre === p.titreContenu && c.statut === "Publié"));
+    afficherPropositionsReunion();
+    statutEl.textContent = propositionsReunion.length
+      ? propositionsReunion.length + " proposition" + (propositionsReunion.length > 1 ? "s" : "") + " à examiner — rien n'est appliqué sans ta validation."
+      : "Aucun changement pertinent détecté dans ce compte-rendu par rapport aux contenus publiés.";
+  } catch (err) {
+    statutEl.textContent = "Erreur : " + err.message;
+  }
+};
+
+function afficherPropositionsReunion() {
+  const resultatsEl = document.getElementById("resultatsReunion");
+  resultatsEl.innerHTML = propositionsReunion.map((p, i) => {
+    const c = contenus.find(x => x.titre === p.titreContenu);
+    const champs = p.champsProposes || {};
+    const diffHtml = Object.keys(champs).map(champ => {
+      const ancienne = c ? c[champ] : null;
+      const ancienTxt = Array.isArray(ancienne) ? ancienne.join(" · ") : (ancienne || "—");
+      const nouvelle = champs[champ];
+      const nouvelleTxt = Array.isArray(nouvelle) ? nouvelle.join(" · ") : nouvelle;
+      return `<div style="margin-top:10px;">
+        <div style="font-size:11px; font-weight:700; color:var(--ink-400); text-transform:uppercase; letter-spacing:.3px;">${escHtml(champ)}</div>
+        <div style="font-size:13px; color:var(--ink-400); text-decoration:line-through;">${escHtml(ancienTxt)}</div>
+        <div style="font-size:13.5px; color:var(--ink);">${escHtml(nouvelleTxt)}</div>
+      </div>`;
+    }).join("");
+    return `
+      <div class="card">
+        <span class="badge avalider">Proposition IA</span>
+        <h3 style="margin:10px 0 4px; font-size:15px; font-weight:600;">${escHtml(p.titreContenu)}</h3>
+        <p class="info" style="margin:0 0 8px;"><strong>${escHtml(p.nature)}</strong></p>
+        <p class="info" style="margin:0;">Justification : ${escHtml(p.justification)}</p>
+        ${diffHtml}
+        <div style="margin-top:14px; display:flex; gap:10px;">
+          <button class="btn primary" onclick="appliquerPropositionReunion(${i})">✅ Appliquer cette modification</button>
+          <button class="btn" onclick="ignorerPropositionReunion(${i})">Ignorer</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.appliquerPropositionReunion = async function (i) {
+  const p = propositionsReunion[i];
+  if (!p) return;
+  const c = contenus.find(x => x.titre === p.titreContenu);
+  if (!c || !p.champsProposes) return;
+  await updateDoc(doc(db, "contenus", c.id), {
+    ...p.champsProposes,
+    derniereModification: serverTimestamp(),
+    historique: arrayUnion({ action: "Modification proposée par l'IA depuis un compte-rendu de réunion, validée par " + profil.nom, auteurNom: profil.nom, date: new Date().toISOString() })
+  });
+  propositionsReunion.splice(i, 1);
+  afficherPropositionsReunion();
+  await chargerContenus();
+};
+window.ignorerPropositionReunion = function (i) {
+  propositionsReunion.splice(i, 1);
+  afficherPropositionsReunion();
 };
 
 // ---------- ASSISTANT QUESTIONS/REPONSES (Expérience B) ----------
