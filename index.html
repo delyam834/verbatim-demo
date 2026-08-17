@@ -184,6 +184,21 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--ink-400); }
   .hero-stat { transition: box-shadow .15s var(--ease); }
   .hero-stat:hover { box-shadow: 0 2px 8px rgba(30,30,20,.06); }
+
+  /* ---------------- Export PDF (impression) ---------------- */
+  .print-only { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #ficheContenu, #ficheContenu * { visibility: visible; }
+    #ficheContenu {
+      position: absolute; top: 0; left: 0; width: 100%;
+      box-shadow: none; border: none; padding: 0; margin: 0;
+    }
+    .no-print { display: none !important; }
+    .print-only { display: block; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #ccc; font-size: 11px; color: #666; }
+    .badge, .vigilance { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    a { color: #000; text-decoration: underline; }
+  }
 </style>
 </head>
 <body>
@@ -826,12 +841,13 @@ window.ouvrirFiche = function (id) {
   const c = contenus.find(x => x.id === id);
   const peutModifier = profil.role !== "lecteur";
   document.getElementById("ficheContenu").innerHTML = `
+    <div class="print-only">Verbatim — ${escHtml(c.type)} — exporté le ${new Date().toLocaleDateString("fr-FR")}</div>
     <span class="badge ${classeType(c.type)}">${c.type}</span>
     <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
     ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">🤖 Généré par IA — non validé</span>` : ""}
     <h2>${escHtml(c.titre)}</h2>
     ${(c.origineIA && !c.valideParResponsable && profil.role === "admin") ? `
-      <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
+      <div class="no-print" style="background:#fef2f2; border:1px solid #fecaca; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
         <p style="margin:0 0 8px; font-size:13.5px; color:#991b1b;">Ce contenu a été rédigé par l'IA à partir d'une source (voix, texte ou schéma) et n'a pas encore été validé par un responsable.</p>
         <button class="btn primary" onclick="validerContenu('${id}')">✅ Valider ce contenu</button>
       </div>
@@ -844,9 +860,10 @@ window.ouvrirFiche = function (id) {
     ${(c.interlocuteurs && c.interlocuteurs.length) ? `<div class="champ-lecture"><label>Interlocuteurs</label><div>${c.interlocuteurs.map(escHtml).join(", ")}</div></div>` : ""}
     ${(c.liens && c.liens.length) ? `<div class="champ-lecture"><label>Liens</label><div>${c.liens.map(l=>`<a href="${escAttr(l)}" target="_blank">${escHtml(l)}</a>`).join("<br>")}</div></div>` : ""}
     <div class="meta">Créé le ${formatDate(c.dateCreation)} — dernière modification le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom)}</div>
-    <div style="margin-top:16px; display:flex; gap:10px;">
+    <div class="no-print" style="margin-top:16px; display:flex; gap:10px;">
       ${(c.type !== "Documentation") ? `<button class="btn primary" onclick="ouvrirExecution('${id}')">▶️ Exécuter</button>` : ""}
       ${peutModifier ? `<button class="btn" onclick="ouvrirModification('${id}')">✏️ Modifier</button>` : ""}
+      <button class="btn" onclick="window.print()">🖨️ Exporter en PDF</button>
     </div>
   `;
   allerVue("fiche");
