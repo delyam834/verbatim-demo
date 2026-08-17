@@ -505,7 +505,7 @@ initializeAppCheck(app, { provider: new ReCaptchaV3Provider("placeholder-non-uti
 const auth = getAuth(app);
 const db = getFirestore(app);
 const ai = getAI(app, { backend: new GoogleAIBackend() });
-const model = getGenerativeModel(ai, { model: "gemini-3.6-flash", generationConfig: { maxOutputTokens: 2048 } });
+const model = getGenerativeModel(ai, { model: "gemini-3.6-flash", generationConfig: { maxOutputTokens: 8192 } });
 
 let profil = null; // { organisationId, role, nom, email }
 let contenus = [];
@@ -910,6 +910,16 @@ function formatDate(ts) {
 }
 function escHtml(s) { return String(s || "").replace(/</g, "&lt;"); }
 function escAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
+function extraireJSON(raw) {
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch (e) { /* tombe sur le message ci-dessous */ }
+  }
+  const tronque = raw.includes("{") && !raw.trim().endsWith("}");
+  throw new Error(tronque
+    ? "Réponse IA tronquée (trop longue) — réessaie, éventuellement avec un texte plus court."
+    : "Réponse IA non structurée.");
+}
 
 document.getElementById("recherche").oninput = afficherCatalogue;
 document.querySelectorAll(".filtre-btn[data-filtre]").forEach(b => b.onclick = () => {
@@ -1197,9 +1207,7 @@ document.getElementById("btnGenererBrouillon").onclick = async () => {
   try {
     const result = await model.generateContent(PROMPT_SYSTEME + texte + `"""`);
     const raw = result.response.text();
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Réponse IA non structurée.");
-    remplirFormulaire(JSON.parse(match[0]));
+    remplirFormulaire(extraireJSON(raw));
     document.getElementById("formulaireContenu").classList.remove("hidden");
     statusEl.textContent = "Brouillon généré — relis et corrige avant d'enregistrer.";
     dernierGenereParIA = true;
@@ -1255,9 +1263,7 @@ Si le schéma est illisible ou incomplet, dis-le clairement dans informationsMan
       { inlineData: { mimeType: fichier.type || "image/png", data: base64 } }
     ]);
     const raw = result.response.text();
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Réponse IA non structurée.");
-    remplirFormulaire(JSON.parse(match[0]));
+    remplirFormulaire(extraireJSON(raw));
     document.getElementById("formulaireContenu").classList.remove("hidden");
     statusEl.textContent = "Brouillon généré à partir du schéma — relis attentivement, cette fonction est expérimentale.";
     dernierGenereParIA = true;
@@ -1445,9 +1451,7 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
   try {
     const result = await model.generateContent(PROMPT_REUNION + JSON.stringify(contenusPublies) + `\n\nCompte-rendu de réunion :\n"""\n${texte}\n"""`);
     const raw = result.response.text();
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Réponse IA non structurée.");
-    const r = JSON.parse(match[0]);
+    const r = extraireJSON(raw);
     const normaliserTitre = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
     propositionsReunion = (r.propositions || [])
       .map(p => {
@@ -1557,9 +1561,7 @@ async function poserQuestion() {
   try {
     const result = await model.generateContent(PROMPT_ASSISTANT + JSON.stringify(contenusPublies) + `\n\nQuestion : "${question}"`);
     const raw = result.response.text();
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Réponse IA non structurée.");
-    const r = JSON.parse(match[0]);
+    const r = extraireJSON(raw);
     const sources = (r.sourcesUtilisees || []).map(titre => {
       const c = contenus.find(x => x.titre === titre);
       return c ? `<span class="chip-source" onclick="ouvrirFiche('${c.id}')">${escHtml(titre)}</span>` : "";
