@@ -402,6 +402,11 @@
       <p class="info" id="analyseReunionStatus"></p>
     </div>
     <div id="resultatsReunion"></div>
+
+    <div class="card">
+      <h2 style="font-size:17px;">Historique des analyses</h2>
+      <div id="historiqueAnalyses"></div>
+    </div>
   </section>
 
   <!-- ASSISTANT QUESTIONS/REPONSES -->
@@ -823,6 +828,7 @@ window.allerVue = function (vue) {
   if (vue === "creer") prepareFormulaireNouveau();
   if (vue === "equipe") chargerEquipe();
   if (vue === "parametres") chargerEcranTheme();
+  if (vue === "reunion") chargerHistoriqueAnalyses();
   try {
     localStorage.setItem("verbatim_derniereVue", vue);
     if (vue === "fiche" || vue === "executer") {
@@ -908,6 +914,12 @@ function formatDate(ts) {
   if (!ts || !ts.toDate) return "à l'instant";
   return ts.toDate().toLocaleDateString("fr-FR");
 }
+function formatDateHeure(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  return d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
 function escHtml(s) { return String(s || "").replace(/</g, "&lt;"); }
 function escAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
 function extraireJSON(raw) {
@@ -985,6 +997,19 @@ window.ouvrirFiche = function (id) {
     ${(c.interlocuteurs && c.interlocuteurs.length) ? `<div class="champ-lecture"><label>Interlocuteurs</label><div>${c.interlocuteurs.map(escHtml).join(", ")}</div></div>` : ""}
     ${(c.liens && c.liens.length) ? `<div class="champ-lecture"><label>Liens</label><div>${c.liens.map(l=>`<a href="${escAttr(l)}" target="_blank">${escHtml(l)}</a>`).join("<br>")}</div></div>` : ""}
     <div class="meta">Créé le ${formatDate(c.dateCreation)} — dernière modification le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom)}</div>
+    ${(c.historique && c.historique.length) ? `
+      <div class="champ-lecture">
+        <label>Historique</label>
+        <div style="display:flex; flex-direction:column;">
+          ${c.historique.slice().reverse().map(h => `
+            <div style="padding:9px 0; border-bottom:1px solid var(--line-soft);">
+              <div style="font-size:13.5px; color:var(--ink);">${escHtml(h.action)}</div>
+              <div style="font-size:11.5px; color:var(--ink-400); margin-top:2px;">${escHtml(h.auteurNom || "?")} — ${formatDateHeure(h.date)}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    ` : ""}
     <div class="no-print" style="margin-top:16px; display:flex; gap:10px;">
       ${(c.type !== "Documentation") ? `<button class="btn primary" onclick="ouvrirExecution('${id}')">Exécuter</button>` : ""}
       ${peutModifier ? `<button class="btn" onclick="ouvrirModification('${id}')">Modifier</button>` : ""}
@@ -995,12 +1020,15 @@ window.ouvrirFiche = function (id) {
 };
 
 window.validerContenu = async function (id) {
+  const entree = { action: "Validation du contenu généré par IA", auteurNom: profil.nom, date: new Date().toISOString() };
   await updateDoc(doc(db, "contenus", id), {
-    valideParResponsable: true, valideParNom: profil.nom, valideLe: serverTimestamp()
+    valideParResponsable: true, valideParNom: profil.nom, valideLe: serverTimestamp(),
+    historique: arrayUnion(entree)
   });
   const c = contenus.find(x => x.id === id);
   c.valideParResponsable = true;
   c.valideParNom = profil.nom;
+  c.historique = [...(c.historique || []), entree];
   afficherBanniereValidation();
   ouvrirFiche(id);
 };
@@ -1009,21 +1037,24 @@ window.appliquerPropositionSurFiche = async function (id) {
   const c = contenus.find(x => x.id === id);
   if (!c || !c.propositionEnAttente) return;
   const champs = c.propositionEnAttente.champsProposes || {};
+  const entree = { action: "Modification proposée par l'IA (analyse de réunion), appliquée par " + profil.nom, auteurNom: profil.nom, date: new Date().toISOString() };
   await updateDoc(doc(db, "contenus", id), {
     ...champs,
     propositionEnAttente: null,
     derniereModification: serverTimestamp(),
-    historique: arrayUnion({ action: "Modification proposée par l'IA (analyse de réunion), appliquée par " + profil.nom, auteurNom: profil.nom, date: new Date().toISOString() })
+    historique: arrayUnion(entree)
   });
   Object.assign(c, champs);
   c.propositionEnAttente = null;
+  c.historique = [...(c.historique || []), entree];
   afficherBanniereValidation();
   ouvrirFiche(id);
 };
 window.rejeterPropositionSurFiche = async function (id) {
-  await updateDoc(doc(db, "contenus", id), { propositionEnAttente: null });
+  const entree = { action: "Proposition de modification (analyse de réunion) rejetée par " + profil.nom, auteurNom: profil.nom, date: new Date().toISOString() };
+  await updateDoc(doc(db, "contenus", id), { propositionEnAttente: null, historique: arrayUnion(entree) });
   const c = contenus.find(x => x.id === id);
-  if (c) c.propositionEnAttente = null;
+  if (c) { c.propositionEnAttente = null; c.historique = [...(c.historique || []), entree]; }
   afficherBanniereValidation();
   ouvrirFiche(id);
 };
@@ -1352,6 +1383,8 @@ Contenus publiés actuels (JSON) :
 `;
 
 let propositionsReunion = [];
+let analyseReunionId = null;
+let analysesHistorique = [];
 
 // ---------- Micro (dictée du compte-rendu) ----------
 let recognitionReunion = null;
@@ -1456,10 +1489,16 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
     propositionsReunion = (r.propositions || [])
       .map(p => {
         const cible = contenus.find(c => c.statut === "Publié" && normaliserTitre(c.titre) === normaliserTitre(p.titreContenu));
-        return cible ? { ...p, titreContenu: cible.titre } : null;
+        return cible ? { ...p, titreContenu: cible.titre, statut: "en_attente" } : null;
       })
       .filter(Boolean);
     afficherPropositionsReunion();
+    const docRef = await addDoc(collection(db, "analysesReunion"), {
+      organisationId: profil.organisationId, auteur: profil.uid, auteurNom: profil.nom,
+      date: serverTimestamp(), texte, propositions: propositionsReunion
+    });
+    analyseReunionId = docRef.id;
+    chargerHistoriqueAnalyses();
     if (propositionsReunion.length) {
       statutEl.textContent = propositionsReunion.length + " proposition" + (propositionsReunion.length > 1 ? "s" : "") + " à examiner — rien n'est appliqué sans ta validation.";
     } else {
@@ -1471,9 +1510,68 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
   }
 };
 
+// ---------- Historique des analyses de réunion ----------
+async function chargerHistoriqueAnalyses() {
+  const conteneur = document.getElementById("historiqueAnalyses");
+  conteneur.innerHTML = "<p class=\"info\">Chargement...</p>";
+  const q = query(collection(db, "analysesReunion"), where("organisationId", "==", profil.organisationId));
+  const snap = await getDocs(q);
+  analysesHistorique = [];
+  snap.forEach(d => analysesHistorique.push({ id: d.id, ...d.data() }));
+  analysesHistorique.sort((a, b) => {
+    const ta = a.date && a.date.toMillis ? a.date.toMillis() : 0;
+    const tb = b.date && b.date.toMillis ? b.date.toMillis() : 0;
+    return tb - ta;
+  });
+  if (!analysesHistorique.length) { conteneur.innerHTML = "<p class=\"info\">Aucune analyse enregistrée pour l'instant.</p>"; return; }
+  conteneur.innerHTML = analysesHistorique.map(a => {
+    const props = a.propositions || [];
+    const nb = (statut) => props.filter(p => p.statut === statut).length;
+    const dateTxt = a.date && a.date.toDate
+      ? (a.date.toDate().toLocaleDateString("fr-FR") + " à " + a.date.toDate().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }))
+      : "à l'instant";
+    const resume = props.length
+      ? props.length + " proposition" + (props.length > 1 ? "s" : "") + " — " + nb("appliquee") + " appliquée(s), " + nb("brouillon") + " en brouillon, " + nb("ignoree") + " ignorée(s)"
+      : "Aucun changement détecté";
+    return `
+      <div style="border-bottom:1px solid var(--line-soft); padding:12px 0;">
+        <button onclick="basculerDetailAnalyse('${a.id}')" style="all:unset; cursor:pointer; display:block; width:100%; box-sizing:border-box;">
+          <div style="font-size:13.5px; font-weight:600; color:var(--ink);">${escHtml(dateTxt)}</div>
+          <div style="font-size:12.5px; color:var(--ink-500); margin-top:2px;">${escHtml(a.auteurNom || "?")} — ${escHtml(resume)}</div>
+        </button>
+        <div id="detailAnalyse-${a.id}" class="hidden" style="margin-top:10px;"></div>
+      </div>
+    `;
+  }).join("");
+}
+window.basculerDetailAnalyse = function (id) {
+  const el = document.getElementById("detailAnalyse-" + id);
+  const deplie = !el.classList.contains("hidden");
+  if (deplie) { el.classList.add("hidden"); el.innerHTML = ""; return; }
+  const a = analysesHistorique.find(x => x.id === id);
+  const props = (a && a.propositions) || [];
+  const libelleStatut = { en_attente: "En attente", appliquee: "Appliquée", brouillon: "Enregistrée en brouillon", ignoree: "Ignorée" };
+  const couleurStatut = { en_attente: "var(--brand-signal)", appliquee: "var(--action)", brouillon: "var(--ink-500)", ignoree: "var(--ink-400)" };
+  el.innerHTML = props.length ? props.map(p => {
+    const c = contenus.find(x => x.titre === p.titreContenu);
+    return `
+      <div style="padding:10px 0; border-top:1px solid var(--line-soft);">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="font-size:13.5px; font-weight:600; color:var(--ink);">${escHtml(p.titreContenu)}</span>
+          <span style="font-size:12px; font-weight:600; color:${couleurStatut[p.statut] || "var(--ink-400)"};">${escHtml(libelleStatut[p.statut] || p.statut || "—")}</span>
+        </div>
+        <p class="info" style="margin:4px 0 0;">${escHtml(p.nature || "")}${p.confiance ? " — confiance " + escHtml(p.confiance) : ""}</p>
+        <p class="info" style="margin:2px 0 0;">${escHtml(p.justification || "")}</p>
+        ${c ? `<button class="btn" style="margin-top:8px; padding:5px 10px; font-size:12px;" onclick="ouvrirFiche('${c.id}')">Voir la fiche</button>` : `<p class="info" style="margin:4px 0 0; font-style:italic;">Contenu introuvable (peut-être supprimé)</p>`}
+      </div>
+    `;
+  }).join("") : `<p class="info">Aucune proposition dans cette analyse.</p>`;
+  el.classList.remove("hidden");
+};
+
 function afficherPropositionsReunion() {
   const resultatsEl = document.getElementById("resultatsReunion");
-  resultatsEl.innerHTML = propositionsReunion.map((p, i) => {
+  resultatsEl.innerHTML = propositionsReunion.map((p, i) => ({ p, i })).filter(x => x.p.statut === "en_attente").map(({ p, i }) => {
     const c = contenus.find(x => x.titre === p.titreContenu);
     return `
       <div class="card">
@@ -1492,23 +1590,32 @@ function afficherPropositionsReunion() {
   }).join("");
 }
 
+async function persisterStatutsPropositions() {
+  if (!analyseReunionId) return;
+  try { await updateDoc(doc(db, "analysesReunion", analyseReunionId), { propositions: propositionsReunion }); } catch (e) {}
+}
+
 window.appliquerPropositionReunion = async function (i) {
   const p = propositionsReunion[i];
-  if (!p) return;
+  if (!p || !p.champsProposes) return;
   const c = contenus.find(x => x.titre === p.titreContenu);
-  if (!c || !p.champsProposes) return;
+  if (!c) return;
   await updateDoc(doc(db, "contenus", c.id), {
     ...p.champsProposes,
     derniereModification: serverTimestamp(),
     historique: arrayUnion({ action: "Modification proposée par l'IA depuis un compte-rendu de réunion, validée par " + profil.nom, auteurNom: profil.nom, date: new Date().toISOString() })
   });
-  propositionsReunion.splice(i, 1);
+  p.statut = "appliquee";
   afficherPropositionsReunion();
+  await persisterStatutsPropositions();
   await chargerContenus();
 };
-window.ignorerPropositionReunion = function (i) {
-  propositionsReunion.splice(i, 1);
+window.ignorerPropositionReunion = async function (i) {
+  const p = propositionsReunion[i];
+  if (!p) return;
+  p.statut = "ignoree";
   afficherPropositionsReunion();
+  await persisterStatutsPropositions();
 };
 window.enregistrerPropositionCommeBrouillon = async function (i) {
   const p = propositionsReunion[i];
@@ -1519,10 +1626,13 @@ window.enregistrerPropositionCommeBrouillon = async function (i) {
     nature: p.nature || "", confiance: p.confiance || "", justification: p.justification || "",
     champsProposes: p.champsProposes || {}, date: new Date().toISOString()
   };
-  await updateDoc(doc(db, "contenus", c.id), { propositionEnAttente });
+  const entree = { action: "Modification proposée par l'IA (analyse de réunion) enregistrée en attente de validation", auteurNom: profil.nom, date: new Date().toISOString() };
+  await updateDoc(doc(db, "contenus", c.id), { propositionEnAttente, historique: arrayUnion(entree) });
   c.propositionEnAttente = propositionEnAttente;
-  propositionsReunion.splice(i, 1);
+  c.historique = [...(c.historique || []), entree];
+  p.statut = "brouillon";
   afficherPropositionsReunion();
+  await persisterStatutsPropositions();
   afficherBanniereValidation();
   ouvrirFiche(c.id);
 };
