@@ -11,7 +11,7 @@
     /* Palette finale "Encre & ardoise" */
     /* Couleurs d'organisation — personnalisables (Paramètres > Apparence), distinguent Processus/Procédure/Documentation.
        Servent de base aux pastilles de type (fond clair dérivé + texte = la teinte elle-même). */
-    --primary:#3a4a7a; --secondary:#6b4f7a; --accent:#3d6b52;
+    --primary:#2d4482; --secondary:#643c82; --accent:#2d734b;
     --gray:#5b6472; --ink:#232733; --ink-700:#3f4756; --ink-500:#5b6472; --ink-400:#8b93a0;
     --line:#e3e6ea; --line-soft:#edeff2;
     --surface:#faf9f7; --surface-raised:#ffffff; --bg: var(--surface);
@@ -22,8 +22,8 @@
     /* Couleurs de marque fixes — jamais réaffectées aux 3 variables d'organisation ci-dessus */
     --action: #2f3b57;         /* encre ardoise — bouton principal, actions, sidebar, focus */
     --brand-accent: #ad8a4e;   /* doré — liens, mise en avant discrète, monogramme */
-    --brand-signal: #95452f;   /* réservée exclusivement au signal "à valider" */
-    --brand-signal-tint: #f7e9e6;
+    --brand-signal: #a03c23;   /* réservée exclusivement au signal "à valider" */
+    --brand-signal-tint: #f8e9e4;
     /* Échelle typographique Inter, 5 échelons (hiérarchie par taille/poids, jamais par couleur) */
     --fs-display: 32px; --fs-titre: 21px; --fs-soustitre: 13px; --fs-corps: 14.5px; --fs-note: 11.5px;
     /* alias conservés pour compatibilité */
@@ -139,7 +139,7 @@
 
   /* --- Identité visuelle calme (refonte v3, inspiration Notion / shadcn) --- */
   body { background: var(--bg); }
-  #fondPersonnalise { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; opacity: .6; }
+  #fondPersonnalise { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; }
   .logo { display:flex; align-items:center; gap:10px; }
   .logo-mark {
     width: 30px; height: 30px; border-radius: 50%;
@@ -608,24 +608,27 @@ let themeOrganisation = null;
 let fondBase64EnAttente = null;
 let fondGalerieUrlEnAttente = null;
 
+const VOILE_BLANC = "linear-gradient(rgba(255,255,255,.82), rgba(255,255,255,.82))";
+
 function appliquerTheme(t) {
   if (!t) return;
   const root = document.documentElement.style;
   if (t.primaire) root.setProperty("--primary", t.primaire);
   if (t.secondaire) root.setProperty("--secondary", t.secondaire);
   if (t.accent) root.setProperty("--accent", t.accent);
+  if (t.fond === undefined) return; // pas d'info de fond dans cet appel : ne pas toucher au fond actuel
   const fondEl = document.getElementById("fondPersonnalise");
   if (t.fond === "image" && t.fondBase64) {
     fondEl.style.background = "";
-    fondEl.style.backgroundImage = `url("${t.fondBase64}")`;
+    fondEl.style.backgroundImage = `${VOILE_BLANC}, url("${t.fondBase64}")`;
     fondEl.style.backgroundSize = "cover";
   } else if (t.fond === "image" && t.fondGalerieUrl) {
     fondEl.style.background = "";
-    fondEl.style.backgroundImage = `url("${t.fondGalerieUrl}")`;
+    fondEl.style.backgroundImage = `${VOILE_BLANC}, url("${t.fondGalerieUrl}")`;
     fondEl.style.backgroundSize = "cover";
   } else if (t.fond && t.fond.startsWith("http")) {
     fondEl.style.background = "";
-    fondEl.style.backgroundImage = `url("${t.fond}")`;
+    fondEl.style.backgroundImage = `${VOILE_BLANC}, url("${t.fond}")`;
     fondEl.style.backgroundSize = "cover";
   } else if (t.fond && FONDS_PREDEFINIS[t.fond]) {
     fondEl.style.backgroundImage = "";
@@ -644,7 +647,7 @@ async function chargerEtAppliquerTheme() {
   }
 }
 
-function chargerEcranTheme() {
+function rafraichirChampsCouleur() {
   const conteneur = document.getElementById("listeThemesPredefinis");
   conteneur.innerHTML = Object.entries(THEMES_PREDEFINIS).map(([nom, t]) => `
     <div style="text-align:center; cursor:pointer;" onclick='appliquerThemePredefini(${JSON.stringify(t)})'>
@@ -652,23 +655,28 @@ function chargerEcranTheme() {
       <div style="font-size:11px; margin-top:4px; color:#555;">${nom}</div>
     </div>
   `).join("");
-  document.getElementById("couleurPrimaire").value = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#3a4a7a";
-  document.getElementById("couleurSecondaire").value = getComputedStyle(document.documentElement).getPropertyValue("--secondary").trim() || "#6b4f7a";
-  document.getElementById("couleurAccent").value = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#3d6b52";
-
-  fondBase64EnAttente = (themeOrganisation && themeOrganisation.fondBase64) || null;
-  fondGalerieUrlEnAttente = (themeOrganisation && themeOrganisation.fondGalerieUrl) || null;
+  document.getElementById("couleurPrimaire").value = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#2d4482";
+  document.getElementById("couleurSecondaire").value = getComputedStyle(document.documentElement).getPropertyValue("--secondary").trim() || "#643c82";
+  document.getElementById("couleurAccent").value = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2d734b";
+}
+// Appelé à chaque entrée sur l'écran Apparence : le fond repart de "Aucun" à chaque visite
+// (ne persiste que si explicitement re-choisi puis enregistré durant cette visite — voir bug fond qui "recollait").
+function chargerEcranTheme() {
+  rafraichirChampsCouleur();
+  fondBase64EnAttente = null;
+  fondGalerieUrlEnAttente = null;
   document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(b => {
-    b.classList.toggle("active", !!themeOrganisation && themeOrganisation.fond === b.dataset.fond);
+    b.classList.toggle("active", b.dataset.fond === "aucun");
   });
-  document.getElementById("fondUrl").value = (themeOrganisation && themeOrganisation.fond && themeOrganisation.fond.startsWith("http")) ? themeOrganisation.fond : "";
+  document.getElementById("fondUrl").value = "";
   document.getElementById("fondUploadStatus").textContent = "";
   chargerGalerieFonds();
-  mettreAJourApercuFond(themeOrganisation ? themeOrganisation.fond : "aucun");
+  mettreAJourApercuFond("aucun");
+  appliquerTheme({ fond: "aucun" });
 }
 window.appliquerThemePredefini = function (t) {
   appliquerTheme(t);
-  chargerEcranTheme();
+  rafraichirChampsCouleur();
 };
 document.querySelectorAll("#vueParametres .filtre-btn[data-fond]").forEach(b => {
   b.onclick = () => {
@@ -779,7 +787,7 @@ document.getElementById("btnEnregistrerTheme").onclick = async () => {
   await setDoc(doc(db, "organisations", profil.organisationId), { theme, nom: profil.organisationId }, { merge: true });
   themeOrganisation = theme;
   appliquerTheme(theme);
-  document.getElementById("themeStatus").textContent = "✅ Apparence enregistrée pour toute l'organisation.";
+  allerVue("catalogue");
 };
 
 // ---------- NAVIGATION ----------
