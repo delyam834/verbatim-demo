@@ -1265,7 +1265,13 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("Réponse IA non structurée.");
     const r = JSON.parse(match[0]);
-    propositionsReunion = (r.propositions || []).filter(p => p.titreContenu && contenus.some(c => c.titre === p.titreContenu && c.statut === "Publié"));
+    const normaliserTitre = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+    propositionsReunion = (r.propositions || [])
+      .map(p => {
+        const cible = contenus.find(c => c.statut === "Publié" && normaliserTitre(c.titre) === normaliserTitre(p.titreContenu));
+        return cible ? { ...p, titreContenu: cible.titre } : null;
+      })
+      .filter(Boolean);
     afficherPropositionsReunion();
     statutEl.textContent = propositionsReunion.length
       ? propositionsReunion.length + " proposition" + (propositionsReunion.length > 1 ? "s" : "") + " à examiner — rien n'est appliqué sans ta validation."
