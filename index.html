@@ -303,6 +303,7 @@
         <div class="hero-stats">
           <div class="hero-stat"><span class="n" id="statTotal">0</span><span class="l">Processus enregistrés</span></div>
           <div class="hero-stat"><span class="n" id="statPublies">0</span><span class="l">Processus actifs</span></div>
+          <div class="hero-stat"><span class="n" id="statBrouillons">0</span><span class="l">Brouillon</span></div>
         </div>
         <button class="btn primary" id="btnNouveauProcessus" onclick="allerVue('nouveauprocessus')" style="white-space:nowrap;">+ Nouveau processus</button>
       </div>
@@ -927,6 +928,7 @@ function afficherCatalogue() {
   document.getElementById("catalogueVide").classList.toggle("hidden", contenus.length > 0);
   document.getElementById("statTotal").textContent = contenus.length;
   document.getElementById("statPublies").textContent = contenus.filter(c => c.statut === "Publié").length;
+  document.getElementById("statBrouillons").textContent = contenus.filter(c => c.statut === "Brouillon").length;
   grille.innerHTML = filtres.length ? filtres.map(c => `
     <div class="card contenu-card ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
       <span class="badge ${classeType(c.type)}">${c.type}</span>
