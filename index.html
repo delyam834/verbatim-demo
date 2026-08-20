@@ -871,7 +871,7 @@ document.getElementById("btnEnregistrerTheme").onclick = async () => {
 
 // ---------- NAVIGATION ----------
 window.allerVue = function (vue) {
-  ["Catalogue","Fiche","Executer","Nouveauprocessus","Creer","Reunion","Equipe","Assistant","Parametres","Lisezmoi"].forEach(v => {
+  ["Catalogue","Fiche","Executer","NouveauProcessus","Creer","Reunion","Equipe","Assistant","Parametres","Lisezmoi"].forEach(v => {
     document.getElementById("vue" + v).classList.toggle("hidden", v.toLowerCase() !== vue);
   });
   document.querySelectorAll("nav button[data-vue]").forEach(b => b.classList.toggle("active", b.dataset.vue === vue));
