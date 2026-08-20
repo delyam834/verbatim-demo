@@ -11,7 +11,7 @@
     /* Palette finale "Encre & ardoise" */
     /* Couleurs d'organisation — personnalisables (Paramètres > Apparence), distinguent Processus/Procédure/Documentation.
        Servent de base aux pastilles de type (fond clair dérivé + texte = la teinte elle-même). */
-    --primary:#2d4482; --secondary:#643c82; --accent:#2d734b;
+    --primary:#2d4482; --secondary:#7d3a6b; --accent:#2d734b;
     --gray:#5b6472; --ink:#232733; --ink-700:#3f4756; --ink-500:#5b6472; --ink-400:#8b93a0;
     --line:#e3e6ea; --line-soft:#edeff2;
     --surface:#faf9f7; --surface-raised:#ffffff; --bg: var(--surface);
@@ -85,7 +85,7 @@
   .badge.processus { background: color-mix(in srgb, var(--primary) 12%, white); color: var(--primary); }
   .badge.processus::before { background: var(--primary); }
   .badge.procedure { background: color-mix(in srgb, var(--secondary) 12%, white); color: var(--secondary); }
-  .badge.procedure::before { background: var(--secondary); }
+  .badge.procedure::before { background: var(--secondary); border-radius: 2px; }
   .badge.documentation { background: color-mix(in srgb, var(--accent) 12%, white); color: var(--accent); }
   .badge.documentation::before { background: var(--accent); }
   .badge.brouillon { background: #fef3e2; color: #92400e; }
@@ -94,6 +94,8 @@
   .badge.publie::before { background: #16a34a; }
   .badge.avalider { background: var(--brand-signal-tint); color: var(--brand-signal); }
   .badge.avalider::before { background: var(--brand-signal); }
+  .badge.revision { background: #fef3e2; color: #92400e; }
+  .badge.revision::before { background: #d97706; }
   .legende { font-size: 12px; color: var(--ink-500); margin: 4px 0 22px; display: flex; gap: 20px; flex-wrap: wrap; background: var(--surface-raised); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   .contenu-card { cursor: pointer; transition: box-shadow .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease); }
@@ -187,6 +189,13 @@
   .contenu-card.processus::before { background: var(--primary); }
   .contenu-card.procedure::before { background: var(--secondary); }
   .contenu-card.documentation::before { background: var(--accent); }
+  .option-source {
+    cursor: pointer; padding: 18px; border-radius: var(--radius); border: 1px solid var(--line);
+    background: var(--surface-raised); transition: box-shadow .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+  }
+  .option-source:hover { box-shadow: var(--shadow-hover); border-color: var(--ink-400); transform: translateY(-2px); }
+  .option-source h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .option-source p { margin: 0; font-size: 13px; color: var(--ink-500); line-height: 1.45; }
   .etat-vide {
     text-align: center; padding: 50px 20px; background: var(--surface-raised); border-radius: var(--radius);
     border: 1px dashed var(--line); color: var(--ink-500);
@@ -257,10 +266,7 @@
   <div class="nav-group-label">Consulter</div>
   <button class="active" data-vue="catalogue">Catalogue</button>
   <button data-vue="assistant">Assistant IA</button>
-
-  <div class="nav-group-label">Créer</div>
-  <button data-vue="creer" id="navCreer">Nouveau contenu</button>
-  <button data-vue="reunion" id="navReunion">Analyser une réunion</button>
+  <button data-vue="lisezmoi">Lisez-moi</button>
 
   <div class="sidebar-spacer"></div>
 
@@ -287,16 +293,19 @@
         <h2 id="heroTitre">Bonjour</h2>
         <p>Retrouve, crée et exécute les processus de ton organisation — capturés en parlant, pas en rédigeant.</p>
       </div>
-      <div class="hero-stats">
-        <div class="hero-stat"><span class="n" id="statTotal">0</span><span class="l">Contenus</span></div>
-        <div class="hero-stat"><span class="n" id="statPublies">0</span><span class="l">Publiés</span></div>
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="n" id="statTotal">0</span><span class="l">Processus enregistrés</span></div>
+          <div class="hero-stat"><span class="n" id="statPublies">0</span><span class="l">Processus actifs</span></div>
+        </div>
+        <button class="btn primary" id="btnNouveauProcessus" onclick="allerVue('nouveauprocessus')" style="white-space:nowrap;">+ Nouveau processus</button>
       </div>
     </div>
     <div id="banniereValidation" class="hidden" style="background:var(--brand-signal-tint); border:1px solid transparent; color:var(--brand-signal); padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13.5px; font-weight:600; cursor:pointer;" onclick="filtrerAValider()">
       <span id="banniereValidationTexte"></span> — clique pour filtrer
     </div>
     <div class="toolbar">
-      <input type="text" id="recherche" placeholder="Rechercher un mot-clé...">
+      <input type="text" id="recherche" placeholder="Rechercher... ex. renouvellement device">
       <button class="filtre-btn active" data-filtre="Tous">Tous</button>
       <button class="filtre-btn" data-filtre="Processus opérationnel">Processus</button>
       <button class="filtre-btn" data-filtre="Procédure technique">Procédure</button>
@@ -324,6 +333,25 @@
   <section id="vueExecuter" class="hidden">
     <span class="lien-retour" onclick="allerVue('catalogue')">← Retour au catalogue</span>
     <div class="card" id="executerContenu"></div>
+  </section>
+
+  <!-- CHOIX DE LA SOURCE -->
+  <section id="vueNouveauProcessus" class="hidden">
+    <span class="lien-retour" onclick="allerVue('catalogue')">← Retour au catalogue</span>
+    <div class="card">
+      <h2>Nouveau processus</h2>
+      <p class="info" style="margin-bottom:18px;">Choisis d'abord la source : comment veux-tu expliquer ce processus ?</p>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px;">
+        <div class="option-source" onclick="allerVue('creer')">
+          <h3>Dicter, importer un document, ou saisir moi-même</h3>
+          <p>Explique le processus à l'oral, importe un schéma ou une capture d'écran, ou remplis directement le formulaire.</p>
+        </div>
+        <div class="option-source" onclick="allerVue('reunion')">
+          <h3>À partir d'un compte-rendu de réunion</h3>
+          <p>Colle, dicte ou importe un compte-rendu : l'IA le compare aux processus déjà publiés et propose les mises à jour pertinentes.</p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- CREATION / MODIFICATION -->
@@ -372,6 +400,11 @@
         <label>Liens utiles (séparés par des virgules)</label><input id="f_liens">
         <label style="color:var(--ink-700); font-weight:700;">Informations manquantes signalées par l'IA</label>
         <textarea id="f_manquant" style="min-height:50px;"></textarea>
+        <div id="blocDateRevision" class="hidden">
+          <label>Date de révision (Administrateur)</label>
+          <input type="date" id="f_dateRevision">
+          <p class="info" style="margin-top:4px;">À l'échéance, un rappel s'affichera sur la fiche pour confirmer explicitement si le processus est toujours à jour — rien n'est modifié automatiquement.</p>
+        </div>
         <div style="margin-top:16px; display:flex; gap:10px;">
           <button class="btn" id="btnSauvegarderBrouillon">Enregistrer comme brouillon</button>
           <button class="btn primary" id="btnPublier">Publier</button>
@@ -423,6 +456,23 @@
         <input type="text" id="chatQuestion" placeholder="Ex. Qui contacter pour une exception sur une campagne de renouvellement ?">
         <button class="btn primary" id="btnPoserQuestion">Envoyer</button>
       </div>
+    </div>
+  </section>
+
+  <!-- LISEZ-MOI (onboarding) -->
+  <section id="vueLisezmoi" class="hidden">
+    <div class="card">
+      <h2>Lisez-moi</h2>
+      <p class="info" style="margin-bottom:18px;">Un processus, c'est une fiche qui explique comment faire quelque chose dans ton organisation — une manipulation technique, une organisation complète, ou une simple documentation de référence. L'idée : le capturer en le racontant à l'oral, pas en le rédigeant depuis une page blanche.</p>
+
+      <div class="section-titre">Consulter</div>
+      <p class="info" style="margin-bottom:16px;">Le Catalogue regroupe tous les processus de ton organisation, filtrables par type et cherchables par mot-clé. L'Assistant IA répond à tes questions en citant uniquement les processus déjà publiés — jamais en inventant.</p>
+
+      <div class="section-titre">Créer</div>
+      <p class="info" style="margin-bottom:16px;">Depuis le bouton « + Nouveau processus » du Catalogue, choisis ta source : explique-le à l'oral, importe un document, remplis le formulaire toi-même, ou pars d'un compte-rendu de réunion que l'IA compare aux processus existants. Un contenu généré par IA n'est jamais publié automatiquement : il attend toujours une validation humaine explicite.</p>
+
+      <div class="section-titre">Exécuter</div>
+      <p class="info">Ouvre un processus et clique sur « Exécuter » pour suivre sa checklist étape par étape. Si une situation sort du cadre standard, tu peux la signaler — elle reste visible sur la fiche, mais ne modifie jamais le processus de référence automatiquement.</p>
     </div>
   </section>
 
@@ -585,11 +635,11 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("userRole").textContent = profil.role;
   document.getElementById("userAvatar").textContent = (profil.nom || "?").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
   document.getElementById("heroTitre").textContent = "Bonjour " + profil.nom.split(" ")[0];
-  document.getElementById("navCreer").classList.toggle("hidden", profil.role === "lecteur");
-  document.getElementById("navReunion").classList.toggle("hidden", profil.role === "lecteur");
+  document.getElementById("btnNouveauProcessus").classList.toggle("hidden", profil.role === "lecteur");
   document.getElementById("navEquipe").classList.toggle("hidden", profil.role !== "admin");
   document.getElementById("navParametres").classList.toggle("hidden", profil.role !== "admin");
   document.getElementById("navGroupAdmin").classList.toggle("hidden", profil.role !== "admin");
+  document.getElementById("blocDateRevision").classList.toggle("hidden", profil.role !== "admin");
   await chargerEtAppliquerTheme();
   await chargerContenus();
   restaurerDerniereVue();
@@ -685,7 +735,7 @@ function rafraichirChampsCouleur() {
     </div>
   `).join("");
   document.getElementById("couleurPrimaire").value = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#2d4482";
-  document.getElementById("couleurSecondaire").value = getComputedStyle(document.documentElement).getPropertyValue("--secondary").trim() || "#643c82";
+  document.getElementById("couleurSecondaire").value = getComputedStyle(document.documentElement).getPropertyValue("--secondary").trim() || "#7d3a6b";
   document.getElementById("couleurAccent").value = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2d734b";
 }
 // Appelé à chaque entrée sur l'écran Apparence : le fond repart de "Aucun" à chaque visite
@@ -821,7 +871,7 @@ document.getElementById("btnEnregistrerTheme").onclick = async () => {
 
 // ---------- NAVIGATION ----------
 window.allerVue = function (vue) {
-  ["Catalogue","Fiche","Executer","Creer","Reunion","Equipe","Assistant","Parametres"].forEach(v => {
+  ["Catalogue","Fiche","Executer","Nouveauprocessus","Creer","Reunion","Equipe","Assistant","Parametres","Lisezmoi"].forEach(v => {
     document.getElementById("vue" + v).classList.toggle("hidden", v.toLowerCase() !== vue);
   });
   document.querySelectorAll("nav button[data-vue]").forEach(b => b.classList.toggle("active", b.dataset.vue === vue));
@@ -864,6 +914,7 @@ function afficherCatalogue() {
       <span class="badge ${classeType(c.type)}">${c.type}</span>
       <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
       ${estAValider(c) ? `<span class="badge avalider">À valider</span>` : ""}
+      ${revisionDue(c) ? `<span class="badge revision">Révision à confirmer</span>` : (c.revisionStatut === 'a_revoir' ? `<span class="badge revision">À revoir</span>` : "")}
       <h3>${escHtml(c.titre)}</h3>
       <p>${escHtml(c.resume || "")}</p>
       <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}</div>
@@ -896,6 +947,14 @@ function classeType(t) {
 }
 function estAValider(c) {
   return (c.origineIA && !c.valideParResponsable) || !!c.propositionEnAttente;
+}
+function revisionDue(c) {
+  if (!c.dateRevision) return false;
+  const due = new Date(c.dateRevision + "T00:00:00");
+  if (isNaN(due)) return false;
+  if (due > new Date()) return false;
+  if (c.revisionConfirmeeLe && new Date(c.revisionConfirmeeLe) >= due) return false;
+  return true;
 }
 function rendreDiffChamps(c, champsProposes) {
   return Object.keys(champsProposes || {}).map(champ => {
@@ -976,7 +1035,13 @@ window.ouvrirFiche = function (id) {
     <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
     ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">Généré par IA — non validé</span>` : ""}
     ${c.propositionEnAttente ? `<span class="badge avalider">Modification proposée</span>` : ""}
+    ${revisionDue(c) ? `<span class="badge revision">Révision à confirmer</span>` : (c.revisionStatut === 'a_revoir' ? `<span class="badge revision">À revoir</span>` : "")}
     <h2>${escHtml(c.titre)}</h2>
+    <div class="no-print" style="margin:10px 0 18px; display:flex; gap:10px; flex-wrap:wrap;">
+      ${(c.type !== "Documentation") ? `<button class="btn primary" onclick="ouvrirExecution('${id}')">Exécuter</button>` : ""}
+      ${peutModifier ? `<button class="btn" onclick="ouvrirModification('${id}')">Modifier</button>` : ""}
+      <button class="btn" onclick="window.print()">Exporter en PDF</button>
+    </div>
     ${(c.origineIA && !c.valideParResponsable && profil.role === "admin") ? `
       <div class="no-print" style="background:var(--brand-signal-tint); border:1px solid transparent; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
         <p style="margin:0 0 8px; font-size:13.5px; color:var(--brand-signal);">Ce contenu a été rédigé par l'IA à partir d'une source (voix, texte ou schéma) et n'a pas encore été validé par un responsable.</p>
@@ -992,6 +1057,15 @@ window.ouvrirFiche = function (id) {
         <div style="margin-top:14px; display:flex; gap:10px;">
           <button class="btn primary" onclick="appliquerPropositionSurFiche('${id}')">Appliquer cette modification</button>
           <button class="btn" onclick="rejeterPropositionSurFiche('${id}')">Rejeter la proposition</button>
+        </div>
+      </div>
+    ` : ""}
+    ${(revisionDue(c) && peutModifier) ? `
+      <div class="no-print" style="background:#fef3e2; border:1px solid transparent; padding:14px 16px; border-radius:10px; margin-bottom:16px;">
+        <p style="margin:0 0 8px; font-size:13.5px; color:#92400e;">Ce processus devait être révisé le ${escHtml(new Date(c.dateRevision + "T00:00:00").toLocaleDateString("fr-FR"))}. Est-il toujours à jour ?</p>
+        <div style="display:flex; gap:10px;">
+          <button class="btn primary" onclick="confirmerRevision('${id}', 'a_jour')">Toujours à jour</button>
+          <button class="btn" onclick="confirmerRevision('${id}', 'a_revoir')">À revoir</button>
         </div>
       </div>
     ` : ""}
@@ -1016,11 +1090,6 @@ window.ouvrirFiche = function (id) {
         </div>
       </div>
     ` : ""}
-    <div class="no-print" style="margin-top:16px; display:flex; gap:10px;">
-      ${(c.type !== "Documentation") ? `<button class="btn primary" onclick="ouvrirExecution('${id}')">Exécuter</button>` : ""}
-      ${peutModifier ? `<button class="btn" onclick="ouvrirModification('${id}')">Modifier</button>` : ""}
-      <button class="btn" onclick="window.print()">Exporter en PDF</button>
-    </div>
   `;
   allerVue("fiche");
 };
@@ -1036,6 +1105,24 @@ window.validerContenu = async function (id) {
   c.valideParNom = profil.nom;
   c.historique = [...(c.historique || []), entree];
   afficherBanniereValidation();
+  ouvrirFiche(id);
+};
+
+window.confirmerRevision = async function (id, statut) {
+  const c = contenus.find(x => x.id === id);
+  if (!c) return;
+  const maintenant = new Date().toISOString();
+  const entree = {
+    action: statut === "a_jour" ? "Révision confirmée : toujours à jour" : "Révision : marqué à revoir",
+    auteurNom: profil.nom, date: maintenant
+  };
+  await updateDoc(doc(db, "contenus", id), {
+    revisionConfirmeeLe: maintenant, revisionStatut: statut,
+    historique: arrayUnion(entree)
+  });
+  c.revisionConfirmeeLe = maintenant;
+  c.revisionStatut = statut;
+  c.historique = [...(c.historique || []), entree];
   ouvrirFiche(id);
 };
 
@@ -1320,10 +1407,11 @@ function remplirFormulaire(b) {
   document.getElementById("f_interlocuteurs").value = (b.interlocuteurs || []).join(", ");
   document.getElementById("f_liens").value = (b.liens || []).join(", ");
   document.getElementById("f_manquant").value = (b.informationsManquantes || []).join("\n");
+  document.getElementById("f_dateRevision").value = b.dateRevision || "";
 }
 
 function lireFormulaire() {
-  return {
+  const donnees = {
     titre: document.getElementById("f_titre").value,
     type: document.getElementById("f_type").value,
     categorie: document.getElementById("f_categorie").value,
@@ -1334,6 +1422,8 @@ function lireFormulaire() {
     interlocuteurs: document.getElementById("f_interlocuteurs").value.split(",").map(s=>s.trim()).filter(Boolean),
     liens: document.getElementById("f_liens").value.split(",").map(s=>s.trim()).filter(Boolean)
   };
+  if (profil.role === "admin") donnees.dateRevision = document.getElementById("f_dateRevision").value || null;
+  return donnees;
 }
 
 async function sauvegarder(statut) {
