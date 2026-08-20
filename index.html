@@ -241,7 +241,7 @@
       <input type="text" id="inpNom" placeholder="Ex. Delya Maali">
       <label>Identifiant d'organisation</label>
       <input type="text" id="inpOrg" placeholder="Ex. mobilite-individuelle-demo">
-      <p class="info">Fourni par l'administrateur de ton entreprise. Un nouveau compte démarre toujours avec le rôle Lecteur.</p>
+      <p class="info">Fourni par l'administrateur de votre entreprise. Un nouveau compte démarre toujours avec le rôle Lecteur.</p>
     </div>
     <label>E-mail</label>
     <input type="email" id="inpEmail">
@@ -264,15 +264,15 @@
   </div>
 
   <div class="nav-group-label">Consulter</div>
-  <button class="active" data-vue="catalogue">Catalogue</button>
-  <button data-vue="assistant">Assistant IA</button>
-  <button data-vue="lisezmoi">Lisez-moi</button>
+  <button class="active" data-vue="catalogue" title="Retrouvez et exécutez tous les processus de votre organisation">Catalogue</button>
+  <button data-vue="assistant" title="Posez une question, l'IA répond en citant les processus publiés">Assistant IA</button>
+  <button data-vue="lisezmoi" title="Comprenez en 2 minutes ce qu'est un processus et comment utiliser l'outil">Lisez-moi</button>
 
   <div class="sidebar-spacer"></div>
 
   <div class="nav-group-label" id="navGroupAdmin">Administration</div>
-  <button data-vue="equipe" id="navEquipe">Équipe</button>
-  <button data-vue="parametres" id="navParametres">Apparence</button>
+  <button data-vue="equipe" id="navEquipe" title="Gérez les membres de votre organisation et leurs rôles">Équipe</button>
+  <button data-vue="parametres" id="navParametres" title="Personnalisez les couleurs et le fond de l'application">Apparence</button>
 
   <div class="sidebar-user">
     <div class="avatar" id="userAvatar"></div>
@@ -291,7 +291,7 @@
     <div class="hero">
       <div>
         <h2 id="heroTitre">Bonjour</h2>
-        <p>Retrouve, crée et exécute les processus de ton organisation — capturés en parlant, pas en rédigeant.</p>
+        <p>Retrouvez, créez et exécutez les processus de votre organisation — capturés en parlant, pas en rédigeant.</p>
       </div>
       <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
         <div class="hero-stats">
@@ -302,7 +302,7 @@
       </div>
     </div>
     <div id="banniereValidation" class="hidden" style="background:var(--brand-signal-tint); border:1px solid transparent; color:var(--brand-signal); padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13.5px; font-weight:600; cursor:pointer;" onclick="filtrerAValider()">
-      <span id="banniereValidationTexte"></span> — clique pour filtrer
+      <span id="banniereValidationTexte"></span> — cliquez pour filtrer
     </div>
     <div class="toolbar">
       <input type="text" id="recherche" placeholder="Rechercher... ex. renouvellement device">
@@ -340,15 +340,15 @@
     <span class="lien-retour" onclick="allerVue('catalogue')">← Retour au catalogue</span>
     <div class="card">
       <h2>Nouveau processus</h2>
-      <p class="info" style="margin-bottom:18px;">Choisis d'abord la source : comment veux-tu expliquer ce processus ?</p>
+      <p class="info" style="margin-bottom:18px;">Choisissez d'abord la source : comment souhaitez-vous expliquer ce processus ?</p>
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px;">
         <div class="option-source" onclick="allerVue('creer')">
-          <h3>Dicter, importer un document, ou saisir moi-même</h3>
-          <p>Explique le processus à l'oral, importe un schéma ou une capture d'écran, ou remplis directement le formulaire.</p>
+          <h3>Dicter, importer un document, ou saisir vous-même</h3>
+          <p>Expliquez le processus à l'oral, importez un schéma ou une capture d'écran, ou remplissez directement le formulaire.</p>
         </div>
         <div class="option-source" onclick="allerVue('reunion')">
           <h3>À partir d'un compte-rendu de réunion</h3>
-          <p>Colle, dicte ou importe un compte-rendu : l'IA le compare aux processus déjà publiés et propose les mises à jour pertinentes.</p>
+          <p>Collez, dictez ou importez un compte-rendu : l'IA le compare aux processus déjà publiés et propose les mises à jour pertinentes.</p>
         </div>
       </div>
     </div>
@@ -366,17 +366,17 @@
         <button class="btn" id="btnMicCancel" disabled>Annuler</button>
         <button class="btn" id="btnMicRestart">Recommencer</button>
       </div>
-      <label>Explique ton processus (voix ou texte)</label>
-      <textarea id="transcription" style="min-height:100px;" placeholder="La transcription apparaît ici — tu peux aussi taper directement."></textarea>
+      <label>Expliquez votre processus (voix ou texte)</label>
+      <textarea id="transcription" style="min-height:100px;" placeholder="La transcription apparaît ici — vous pouvez aussi taper directement."></textarea>
       <div class="boutons-creation" style="margin-top:10px;">
         <button class="btn primary" id="btnGenererBrouillon">Générer le brouillon avec l'IA</button>
         <button class="btn" id="btnRemplirManuel">Remplir le formulaire manuellement</button>
       </div>
       <div style="margin-top:16px; border-top:1px dashed #e5e7eb; padding-top:14px;">
         <label style="margin-top:0;">Ou importer un schéma existant (Miro, draw.io, PowerPoint, Word, capture d'écran...) — expérimental</label>
-        <p class="info" style="margin-top:0;">Fonctionne directement avec une image ou un PDF. Pour un fichier Word/PowerPoint, exporte-le d'abord en PDF ou fais une capture d'écran (Word/PowerPoint : « Fichier → Exporter → PDF »).</p>
+        <p class="info" style="margin-top:0;">Fonctionne directement avec une image ou un PDF. Pour un fichier Word/PowerPoint, exportez-le d'abord en PDF ou faites une capture d'écran (Word/PowerPoint : « Fichier → Exporter → PDF »).</p>
         <div class="dropzone" id="dropzoneMiro">
-          Glisse ta capture d'écran ou ton fichier ici, ou <u>clique pour choisir un fichier</u>
+          Glissez votre capture d'écran ou votre fichier ici, ou <u>cliquez pour choisir un fichier</u>
           <input type="file" id="inputMiro" accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx" class="hidden">
         </div>
         <p class="info" id="miroFichierNom"></p>
@@ -418,7 +418,7 @@
   <section id="vueReunion" class="hidden">
     <div class="card">
       <h2>Analyser une réunion</h2>
-      <p class="info" style="margin-bottom:16px;">Enregistre ou colle un compte-rendu de réunion : l'IA le compare aux contenus déjà publiés de ton organisation et propose des modifications ciblées, avec justification. Rien n'est jamais modifié automatiquement — chaque proposition attend ta validation explicite.</p>
+      <p class="info" style="margin-bottom:16px;">Enregistrez ou collez un compte-rendu de réunion : l'IA le compare aux contenus déjà publiés de votre organisation et propose des modifications ciblées, avec justification. Rien n'est jamais modifié automatiquement — chaque proposition attend votre validation explicite.</p>
       <p>Micro : <span id="micStatusReunion" style="color:var(--ink-400);">inactif</span></p>
       <div style="display:flex; gap:8px; margin-bottom:10px;">
         <button class="btn" id="btnMicReunionStart">Démarrer</button>
@@ -426,7 +426,7 @@
         <button class="btn" id="btnMicReunionCancel" disabled>Annuler</button>
       </div>
       <label style="margin-top:0;">Texte de la réunion</label>
-      <textarea id="transcriptReunion" style="min-height:160px;" placeholder="Dicte au micro, colle ici le compte-rendu, ou importe un fichier..."></textarea>
+      <textarea id="transcriptReunion" style="min-height:160px;" placeholder="Dictez au micro, collez ici le compte-rendu, ou importez un fichier..."></textarea>
       <div style="display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap;">
         <button class="btn primary" id="btnAnalyserReunion">Analyser avec l'IA</button>
         <button class="btn" id="btnImporterTranscript">Importer un fichier .txt ou .docx</button>
@@ -446,7 +446,7 @@
   <section id="vueAssistant" class="hidden">
     <div class="card">
       <h2>Assistant de connaissance</h2>
-      <p class="info" style="margin-bottom:16px;">Pose une question sur les processus de ton entreprise. L'IA ne répond qu'à partir des contenus publiés — jamais en inventant.</p>
+      <p class="info" style="margin-bottom:16px;">Posez une question sur les processus de votre entreprise. L'IA ne répond qu'à partir des contenus publiés — jamais en inventant.</p>
       <div id="chatHistorique"></div>
       <p class="info" style="margin:6px 0;">Micro : <span id="micStatusChat" style="color:#999;">inactif</span>
         <button class="btn" id="btnMicChatStart" style="padding:4px 10px; margin-left:8px;">Micro</button>
@@ -463,16 +463,27 @@
   <section id="vueLisezmoi" class="hidden">
     <div class="card">
       <h2>Lisez-moi</h2>
-      <p class="info" style="margin-bottom:18px;">Un processus, c'est une fiche qui explique comment faire quelque chose dans ton organisation — une manipulation technique, une organisation complète, ou une simple documentation de référence. L'idée : le capturer en le racontant à l'oral, pas en le rédigeant depuis une page blanche.</p>
+      <p class="info" style="margin-bottom:18px;">Un processus, c'est une fiche qui explique comment faire quelque chose dans votre organisation — une manipulation technique, une organisation complète, ou une simple documentation de référence. L'idée : le capturer en le racontant à l'oral, pas en le rédigeant depuis une page blanche.</p>
 
       <div class="section-titre">Consulter</div>
-      <p class="info" style="margin-bottom:16px;">Le Catalogue regroupe tous les processus de ton organisation, filtrables par type et cherchables par mot-clé. L'Assistant IA répond à tes questions en citant uniquement les processus déjà publiés — jamais en inventant.</p>
+      <p class="info" style="margin-bottom:16px;">Le Catalogue regroupe tous les processus de votre organisation, filtrables par type et cherchables par mot-clé. L'Assistant IA répond à vos questions en citant uniquement les processus déjà publiés — jamais en inventant.</p>
 
       <div class="section-titre">Créer</div>
-      <p class="info" style="margin-bottom:16px;">Depuis le bouton « + Nouveau processus » du Catalogue, choisis ta source : explique-le à l'oral, importe un document, remplis le formulaire toi-même, ou pars d'un compte-rendu de réunion que l'IA compare aux processus existants. Un contenu généré par IA n'est jamais publié automatiquement : il attend toujours une validation humaine explicite.</p>
+      <p class="info" style="margin-bottom:16px;">Depuis le bouton « + Nouveau processus » du Catalogue, choisissez votre source : expliquez-le à l'oral, importez un document, remplissez le formulaire vous-même, ou partez d'un compte-rendu de réunion que l'IA compare aux processus existants. Un contenu généré par IA n'est jamais publié automatiquement : il attend toujours une validation humaine explicite.</p>
 
       <div class="section-titre">Exécuter</div>
-      <p class="info">Ouvre un processus et clique sur « Exécuter » pour suivre sa checklist étape par étape. Si une situation sort du cadre standard, tu peux la signaler — elle reste visible sur la fiche, mais ne modifie jamais le processus de référence automatiquement.</p>
+      <p class="info" style="margin-bottom:16px;">Ouvrez un processus et cliquez sur « Exécuter » pour suivre sa checklist étape par étape. Si une situation sort du cadre standard, vous pouvez la signaler — elle reste visible sur la fiche, mais ne modifie jamais le processus de référence automatiquement.</p>
+
+      <div class="section-titre">Les rôles</div>
+      <p class="info" style="margin-bottom:8px;"><strong>Lecteur</strong> — consulte le catalogue, exécute les processus et interroge l'Assistant IA. Ne peut ni créer ni modifier de contenu.</p>
+      <p class="info" style="margin-bottom:8px;"><strong>Éditeur</strong> — en plus, crée et modifie des processus (dictée, import, réunion, saisie manuelle), et traite les propositions de modification. Ne gère ni l'équipe ni l'apparence.</p>
+      <p class="info" style="margin-bottom:16px;"><strong>Administrateur</strong> — en plus, valide les contenus générés par IA, gère les rôles de l'équipe, personnalise l'apparence, et fixe les dates de révision des processus.</p>
+
+      <div class="section-titre">Exemple concret</div>
+      <p class="info" style="margin-bottom:16px;">« Processus de remplacement d'un équipement en fin de vie » : un Éditeur explique la marche à suivre à l'oral (identifier l'équipement, prévenir l'utilisateur, planifier le rendez-vous, effacer et récupérer l'ancien matériel, clôturer le dossier). L'IA en tire un brouillon structuré, avec ses étapes, ses points de vigilance et les interlocuteurs à contacter. Un Administrateur relit et publie. Le processus apparaît alors dans le Catalogue, exécutable en checklist par toute l'équipe.</p>
+
+      <div class="section-titre">Durée de vie d'un processus</div>
+      <p class="info">Un Administrateur peut fixer une date de révision sur un processus. À l'échéance, une bannière et un badge « Révision à confirmer » apparaissent sur sa fiche, invitant à confirmer explicitement s'il est toujours à jour ou s'il doit être revu — rien n'est jamais modifié automatiquement, et chaque confirmation reste tracée dans l'historique du processus.</p>
     </div>
   </section>
 
@@ -480,16 +491,17 @@
   <section id="vueParametres" class="hidden">
     <div class="card">
       <h2>Personnaliser l'apparence</h2>
-      <p class="info" style="margin-bottom:16px;">Visible par toute l'équipe de ton organisation.</p>
+      <p class="info" style="margin-bottom:16px;">Visible par toute l'équipe de votre organisation.</p>
 
       <label style="margin-top:0;">Thèmes prédéfinis</label>
       <div id="listeThemesPredefinis" style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px;"></div>
 
-      <label>Personnaliser les couleurs</label>
+      <label>Couleurs des types de contenu</label>
+      <p class="info" style="margin-top:0;">Ces 3 couleurs déterminent l'apparence des pastilles Processus / Procédure / Documentation dans tout l'outil.</p>
       <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
-        <span>Couleur principale <input type="color" id="couleurPrimaire" style="width:50px; padding:2px;"></span>
-        <span>Couleur secondaire <input type="color" id="couleurSecondaire" style="width:50px; padding:2px;"></span>
-        <span>Couleur d'accent <input type="color" id="couleurAccent" style="width:50px; padding:2px;"></span>
+        <span>Processus <input type="color" id="couleurPrimaire" style="width:50px; padding:2px;"></span>
+        <span>Procédure <input type="color" id="couleurSecondaire" style="width:50px; padding:2px;"></span>
+        <span>Documentation <input type="color" id="couleurAccent" style="width:50px; padding:2px;"></span>
       </div>
 
       <label>Fond de l'application</label>
@@ -505,9 +517,9 @@
       <label>Bibliothèque de fonds</label>
       <div id="galerieFonds" class="galerie-fonds"></div>
 
-      <label>Ou importer une image depuis ton ordinateur</label>
+      <label>Ou importer une image depuis votre ordinateur</label>
       <div class="dropzone" id="dropzoneFond">
-        Glisse une image ici, ou <u>clique pour choisir un fichier</u>
+        Glissez une image ici, ou <u>cliquez pour choisir un fichier</u>
         <input type="file" id="inputFond" accept="image/*" class="hidden">
       </div>
       <p class="info" id="fondUploadStatus"></p>
@@ -526,7 +538,7 @@
   <section id="vueEquipe" class="hidden">
     <div class="card">
       <h2>Équipe — <span id="equipeOrg"></span></h2>
-      <p class="info">Ajoute une personne en lui communiquant l'identifiant d'organisation ci-dessus : elle crée son compte, puis tu ajustes son rôle ici.</p>
+      <p class="info">Ajoutez une personne en lui communiquant l'identifiant d'organisation ci-dessus : elle crée son compte, puis vous ajustez son rôle ici.</p>
       <table>
         <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th></tr></thead>
         <tbody id="equipeTableBody"></tbody>
@@ -601,7 +613,7 @@ document.getElementById("btnAuthAction").onclick = async () => {
 
 function traduireErreur(code) {
   const map = {
-    "auth/email-already-in-use": "Cet e-mail a déjà un compte — connecte-toi plutôt.",
+    "auth/email-already-in-use": "Cet e-mail a déjà un compte — connectez-vous plutôt.",
     "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
     "auth/invalid-email": "E-mail invalide.",
     "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
@@ -623,7 +635,7 @@ onAuthStateChanged(auth, async (user) => {
   }
   const snap = await getDoc(doc(db, "users", user.uid));
   if (!snap.exists()) {
-    document.getElementById("authErreur").textContent = "Profil introuvable — réessaie de créer un compte.";
+    document.getElementById("authErreur").textContent = "Profil introuvable — réessayez de créer un compte.";
     await signOut(auth);
     return;
   }
@@ -829,12 +841,12 @@ inputFond.onchange = () => { if (inputFond.files[0]) traiterFichierFond(inputFon
 
 async function traiterFichierFond(fichier) {
   const statutEl = document.getElementById("fondUploadStatus");
-  if (!fichier.type.startsWith("image/")) { statutEl.textContent = "Choisis un fichier image (JPG, PNG...)."; return; }
+  if (!fichier.type.startsWith("image/")) { statutEl.textContent = "Choisissez un fichier image (JPG, PNG...)."; return; }
   statutEl.textContent = "Traitement de l'image...";
   try {
     const dataUri = await redimensionnerCompresserImage(fichier);
     if (dataUri.length > 700000) {
-      statutEl.textContent = "Image encore trop lourde après compression — essaie une image plus simple ou plus petite.";
+      statutEl.textContent = "Image encore trop lourde après compression — essayez une image plus simple ou plus petite.";
       return;
     }
     fondBase64EnAttente = dataUri;
@@ -843,7 +855,7 @@ async function traiterFichierFond(fichier) {
     appliquerTheme({ fond: "image", fondBase64: dataUri });
     chargerGalerieFonds();
     mettreAJourApercuFond("image");
-    statutEl.textContent = "Image prête — clique sur \"Enregistrer l'apparence\" pour l'appliquer à toute l'équipe.";
+    statutEl.textContent = "Image prête — cliquez sur \"Enregistrer l'apparence\" pour l'appliquer à toute l'équipe.";
   } catch (err) {
     statutEl.textContent = "Erreur de traitement de l'image : " + err.message;
   }
@@ -984,7 +996,7 @@ function escAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
 function avecDelai(promesse, ms) {
   return Promise.race([
     promesse,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("Délai dépassé — l'IA n'a pas répondu à temps, réessaie.")), ms))
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Délai dépassé — l'IA n'a pas répondu à temps, réessayez.")), ms))
   ]);
 }
 function extraireJSON(raw) {
@@ -994,7 +1006,7 @@ function extraireJSON(raw) {
   }
   const tronque = raw.includes("{") && !raw.trim().endsWith("}");
   throw new Error(tronque
-    ? "Réponse IA tronquée (trop longue) — réessaie, éventuellement avec un texte plus court."
+    ? "Réponse IA tronquée (trop longue) — réessayez, éventuellement avec un texte plus court."
     : "Réponse IA non structurée.");
 }
 
@@ -1179,11 +1191,11 @@ window.ouvrirExecution = function (id) {
         <button class="btn" id="btnMicExcStart" style="padding:4px 10px; margin-left:8px;">Micro</button>
         <button class="btn" id="btnMicExcStop" style="padding:4px 10px;" disabled>■</button>
       </p>
-      <textarea id="exceptionTexte" placeholder="Décris ce qui sort du standard, à l'écrit ou à l'oral..."></textarea>
+      <textarea id="exceptionTexte" placeholder="Décrivez ce qui sort du standard, à l'écrit ou à l'oral..."></textarea>
       <button class="btn primary" style="margin-top:8px;" onclick="signalerException('${id}')">Signaler l'exception</button>
       <p class="info" id="exceptionStatut"></p>
     </div>
-    <p class="info" style="margin-top:14px;">La checklist cochée reste liée à ta session (non sauvegardée) — mais les exceptions, elles, sont enregistrées et restent visibles ici. Le processus de référence n'est jamais modifié automatiquement.</p>
+    <p class="info" style="margin-top:14px;">La checklist cochée reste liée à votre session (non sauvegardée) — mais les exceptions, elles, sont enregistrées et restent visibles ici. Le processus de référence n'est jamais modifié automatiquement.</p>
   `;
   attacherMicExceptions();
   allerVue("executer");
@@ -1214,7 +1226,7 @@ function attacherMicExceptions() {
   const r = new SpeechRecognition();
   r.lang = "fr-FR"; r.continuous = true; r.interimResults = true;
   r.onstart = () => {
-    document.getElementById("micStatusExc").textContent = "actif — parle";
+    document.getElementById("micStatusExc").textContent = "actif — parlez";
     document.getElementById("micStatusExc").className = "actif";
     document.getElementById("btnMicExcStart").disabled = true;
     document.getElementById("btnMicExcStop").disabled = false;
@@ -1248,7 +1260,7 @@ if (SpeechRecognition) {
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.onstart = () => {
-    document.getElementById("micStatus").textContent = "actif — parle maintenant";
+    document.getElementById("micStatus").textContent = "actif — parlez maintenant";
     document.getElementById("micStatus").className = "actif";
     document.getElementById("btnMicStart").disabled = true;
     document.getElementById("btnMicStop").disabled = false;
@@ -1326,7 +1338,7 @@ Texte fourni :
 document.getElementById("btnGenererBrouillon").onclick = async () => {
   const texte = document.getElementById("transcription").value.trim();
   const statusEl = document.getElementById("genererStatus");
-  if (!texte) { statusEl.textContent = "Explique un processus ou tape un texte d'abord."; return; }
+  if (!texte) { statusEl.textContent = "Expliquez un processus ou tapez un texte d'abord."; return; }
   statusEl.textContent = "Génération en cours...";
   try {
     const result = await avecDelai(model.generateContent(PROMPT_SYSTEME + texte + `"""`), 60000);
@@ -1370,7 +1382,7 @@ async function analyserSchema(fichier) {
   const typesLisibles = ["application/pdf"];
   const estImage = fichier.type.startsWith("image/");
   if (!estImage && !typesLisibles.includes(fichier.type)) {
-    statusEl.textContent = "Ce format (" + (fichier.name.split(".").pop() || fichier.type) + ") n'est pas encore analysable directement. Exporte ton fichier Word/PowerPoint en PDF, ou fais une capture d'écran du schéma, puis réimporte.";
+    statusEl.textContent = "Ce format (" + (fichier.name.split(".").pop() || fichier.type) + ") n'est pas encore analysable directement. Exportez votre fichier Word/PowerPoint en PDF, ou faites une capture d'écran du schéma, puis réimportez-le.";
     return;
   }
   statusEl.textContent = "Analyse du schéma en cours (expérimental)...";
@@ -1392,7 +1404,7 @@ Si le schéma est illisible ou incomplet, dis-le clairement dans informationsMan
     statusEl.textContent = "Brouillon généré à partir du schéma — relis attentivement, cette fonction est expérimentale.";
     dernierGenereParIA = true;
   } catch (err) {
-    statusEl.textContent = "Import du schéma indisponible pour l'instant (" + err.message + ") — fonctionnalité expérimentale, saisis manuellement en attendant.";
+    statusEl.textContent = "Import du schéma indisponible pour l'instant (" + err.message + ") — fonctionnalité expérimentale, saisissez manuellement en attendant.";
   }
 }
 
@@ -1490,7 +1502,7 @@ if (SpeechRecognition) {
   recognitionReunion.continuous = true;
   recognitionReunion.interimResults = true;
   recognitionReunion.onstart = () => {
-    document.getElementById("micStatusReunion").textContent = "actif — parle maintenant";
+    document.getElementById("micStatusReunion").textContent = "actif — parlez maintenant";
     document.getElementById("micStatusReunion").className = "actif";
     document.getElementById("btnMicReunionStart").disabled = true;
     document.getElementById("btnMicReunionStop").disabled = false;
@@ -1556,7 +1568,7 @@ document.getElementById("inputTranscriptReunion").onchange = async (e) => {
       document.getElementById("transcriptReunion").value = resultat.value;
       statutEl.textContent = "";
     } catch (err) {
-      statutEl.textContent = "Impossible de lire ce fichier Word (les anciens .doc ne sont pas pris en charge — ré-enregistre-le au format .docx) : " + err.message;
+      statutEl.textContent = "Impossible de lire ce fichier Word (les anciens .doc ne sont pas pris en charge — ré-enregistrez-le au format .docx) : " + err.message;
     }
     return;
   }
@@ -1569,12 +1581,12 @@ document.getElementById("inputTranscriptReunion").onchange = async (e) => {
 document.getElementById("btnAnalyserReunion").onclick = async () => {
   const texte = document.getElementById("transcriptReunion").value.trim();
   const statutEl = document.getElementById("analyseReunionStatus");
-  if (!texte) { statutEl.textContent = "Colle ou importe un compte-rendu de réunion d'abord."; return; }
+  if (!texte) { statutEl.textContent = "Collez ou importez un compte-rendu de réunion d'abord."; return; }
   const contenusPublies = contenus.filter(c => c.statut === "Publié").map(c => ({
     titre: c.titre, resume: c.resume, prerequis: c.prerequis, etapes: c.etapes,
     pointsVigilance: c.pointsVigilance, interlocuteurs: c.interlocuteurs
   }));
-  if (!contenusPublies.length) { statutEl.textContent = "Aucun contenu publié dans ton organisation à comparer pour l'instant."; return; }
+  if (!contenusPublies.length) { statutEl.textContent = "Aucun contenu publié dans votre organisation à comparer pour l'instant."; return; }
   statutEl.textContent = "Analyse en cours (" + contenusPublies.length + " contenu" + (contenusPublies.length > 1 ? "s" : "") + " comparé" + (contenusPublies.length > 1 ? "s" : "") + ")... cela peut prendre jusqu'à une minute.";
   document.getElementById("resultatsReunion").innerHTML = "";
   try {
@@ -1596,7 +1608,7 @@ document.getElementById("btnAnalyserReunion").onclick = async () => {
     analyseReunionId = docRef.id;
     chargerHistoriqueAnalyses();
     if (propositionsReunion.length) {
-      statutEl.textContent = propositionsReunion.length + " proposition" + (propositionsReunion.length > 1 ? "s" : "") + " à examiner — rien n'est appliqué sans ta validation.";
+      statutEl.textContent = propositionsReunion.length + " proposition" + (propositionsReunion.length > 1 ? "s" : "") + " à examiner — rien n'est appliqué sans votre validation.";
     } else {
       const titres = contenusPublies.map(c => c.titre).join(" · ");
       statutEl.textContent = "Aucun changement pertinent détecté. Contenus publiés comparés (" + contenusPublies.length + ") : " + titres;
@@ -1793,7 +1805,7 @@ if (SpeechRecognition) {
   recognitionChat = new SpeechRecognition();
   recognitionChat.lang = "fr-FR";
   recognitionChat.onstart = () => {
-    document.getElementById("micStatusChat").textContent = "actif — parle";
+    document.getElementById("micStatusChat").textContent = "actif — parlez";
     document.getElementById("micStatusChat").className = "actif";
     document.getElementById("btnMicChatStart").disabled = true;
     document.getElementById("btnMicChatStop").disabled = false;
