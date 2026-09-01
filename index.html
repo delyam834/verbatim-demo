@@ -1017,7 +1017,7 @@ function afficherCatalogue() {
       ${estAValider(c) ? `<span class="badge avalider">À valider</span>` : ""}
       <h3>${escHtml(c.titre)}</h3>
       <p>${escHtml(c.resume || "")}</p>
-      <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}</div>
+      <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}${c.dateRevision ? ` · Révision : ${escHtml(new Date(c.dateRevision + "T00:00:00").toLocaleDateString("fr-FR"))}` : ""}</div>
     </div>
   `).join("") : (contenus.length ? `<div class="etat-vide">Aucun résultat pour cette recherche.</div>` : "");
   afficherBanniereValidation();
@@ -1181,6 +1181,7 @@ window.ouvrirFiche = function (id) {
     ${c.pointsVigilance ? `<div class="champ-lecture"><label>Points de vigilance</label><div class="vigilance">${escHtml(c.pointsVigilance)}</div></div>` : ""}
     ${(c.interlocuteurs && c.interlocuteurs.length) ? `<div class="champ-lecture"><label>Interlocuteurs</label><div>${c.interlocuteurs.map(escHtml).join(", ")}</div></div>` : ""}
     ${(c.liens && c.liens.length) ? `<div class="champ-lecture"><label>Liens</label><div>${c.liens.map(l=>`<a href="${escAttr(l)}" target="_blank">${escHtml(l)}</a>`).join("<br>")}</div></div>` : ""}
+    ${c.dateRevision ? `<div class="champ-lecture"><label>Date de révision</label><div>${escHtml(new Date(c.dateRevision + "T00:00:00").toLocaleDateString("fr-FR"))}${revisionDue(c) ? ` <span style="color:var(--brand-signal); font-weight:700;">— dépassée</span>` : ""}</div></div>` : ""}
     <div class="meta">Créé le ${formatDate(c.dateCreation)} — dernière modification le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom)}</div>
     ${(c.historique && c.historique.length) ? `
       <div class="champ-lecture">
