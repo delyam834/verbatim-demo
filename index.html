@@ -103,15 +103,11 @@
   .badge.revision::before { background: #d97706; }
   .alerte-revision { background: var(--brand-signal); color: #fff; font-weight: 700; font-size: 13px; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
   .legende { font-size: 12px; color: var(--ink-500); margin: 4px 0 22px; display: flex; gap: 20px; flex-wrap: wrap; background: var(--surface-raised); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); }
-  .table-catalogue { background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; border-collapse: separate; border-spacing: 0; }
-  .table-catalogue th { background: var(--surface); }
-  .table-catalogue td { vertical-align: top; padding: 12px 14px; }
-  .table-catalogue th:first-child, .table-catalogue td:first-child { padding-left: 16px; }
-  .ligne-contenu { cursor: pointer; border-left: 3px solid transparent; }
-  .ligne-contenu:hover td { background: var(--line-soft); }
-  .ligne-contenu.processus { border-left-color: var(--primary); }
-  .ligne-contenu.procedure { border-left-color: var(--secondary); }
-  .ligne-contenu.documentation { border-left-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .contenu-card { cursor: pointer; transition: border-color .15s var(--ease); }
+  .contenu-card:hover { border-color: var(--ink-400); }
+  .contenu-card h3 { margin: 10px 0 6px; font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -.1px; }
+  .contenu-card p { margin: 0; font-size: 13px; color: var(--ink-500); line-height: 1.45; }
   .meta { font-size: var(--fs-note); color: var(--ink-400); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
   .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
   .toolbar input[type=text] { flex: 1; min-width: 200px; max-width: 340px; }
@@ -191,6 +187,13 @@
   .hero-stat { text-align: left; padding: 0; border-radius: 0; background: none; border: none; border-left: 2px solid var(--line); padding-left: 14px; }
   .hero-stat .n { font-size: 19px; font-weight: 700; display: block; color: var(--ink); }
   .hero-stat .l { font-size: 10.5px; color: var(--ink-400); text-transform: uppercase; letter-spacing: .4px; }
+  .contenu-card { position: relative; padding-left: 18px; background: var(--surface-raised); border: 1px solid var(--line); }
+  .contenu-card::before {
+    content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 2px;
+  }
+  .contenu-card.processus::before { background: var(--primary); }
+  .contenu-card.procedure::before { background: var(--secondary); }
+  .contenu-card.documentation::before { background: var(--accent); }
   .option-source {
     cursor: pointer; padding: 18px; border-radius: var(--radius); border: 1px solid var(--line);
     background: var(--surface-raised); transition: border-color .15s var(--ease);
@@ -348,10 +351,7 @@
       <span><span class="badge procedure">Procédure</span> manipulation technique précise</span>
       <span><span class="badge documentation">Doc</span> explications, référence générale</span>
     </div>
-    <table class="table-catalogue">
-      <thead><tr><th>Titre</th><th>Type</th><th>Statut</th><th>Modifié le</th><th>Par</th></tr></thead>
-      <tbody id="grilleCatalogue"></tbody>
-    </table>
+    <div id="grilleCatalogue" class="grid"></div>
     <p id="catalogueVide" class="info hidden">Aucun contenu pour l'instant.
       <button class="btn" onclick="chargerExemples()">Charger 4 exemples fictifs</button>
     </p>
@@ -685,6 +685,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("userEmail").textContent = profil.nom + " (" + profil.email + ")";
   document.getElementById("userRole").textContent = profil.role;
   document.getElementById("userAvatar").textContent = (profil.nom || "?").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
+  document.getElementById("heroTitre").textContent = "Bonjour " + profil.nom.split(" ")[0];
   document.getElementById("btnNouveauProcessus").classList.toggle("hidden", profil.role === "lecteur");
   document.getElementById("navEquipe").classList.toggle("hidden", profil.role !== "admin");
   document.getElementById("navParametres").classList.toggle("hidden", profil.role !== "admin");
@@ -1025,21 +1026,16 @@ function afficherCatalogue() {
   document.getElementById("statPublies").textContent = contenus.filter(c => c.statut === "Publié").length;
   document.getElementById("statBrouillons").textContent = contenus.filter(c => c.statut === "Brouillon").length;
   grille.innerHTML = filtres.length ? filtres.map(c => `
-    <tr class="ligne-contenu ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
-      <td>
-        ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div style="display:flex; align-items:center; gap:5px; color:var(--brand-signal); font-size:11px; font-weight:700; margin-bottom:4px;">${ICONE_ALERTE}${revisionDue(c) ? "Révision requise" : "À revoir"}</div>` : ""}
-        <div style="font-weight:600; color:var(--ink);">${escHtml(c.titre)}</div>
-        ${c.resume ? `<div style="font-size:12.5px; color:var(--ink-500); margin-top:2px;">${escHtml(c.resume)}</div>` : ""}
-      </td>
-      <td><span class="badge ${classeType(c.type)}">${c.type}</span></td>
-      <td>
-        <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
-        ${estAValider(c) ? `<span class="badge avalider">À valider</span>` : ""}
-      </td>
-      <td>${formatDate(c.derniereModification)}${c.dateRevision ? `<div style="font-size:11px; color:var(--ink-400); margin-top:2px;">Révision : ${escHtml(new Date(c.dateRevision + "T00:00:00").toLocaleDateString("fr-FR"))}</div>` : ""}</td>
-      <td>${escHtml(c.auteurNom || "?")}</td>
-    </tr>
-  `).join("") : (contenus.length ? `<tr><td colspan="5"><div class="etat-vide">Aucun résultat pour cette recherche.</div></td></tr>` : "");
+    <div class="card contenu-card ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
+      ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div class="alerte-revision" style="margin:-22px -22px 12px -18px; border-radius:var(--radius) var(--radius) 0 0;">${ICONE_ALERTE}${revisionDue(c) ? "Révision requise" : "À revoir"}</div>` : ""}
+      <span class="badge ${classeType(c.type)}">${c.type}</span>
+      <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
+      ${estAValider(c) ? `<span class="badge avalider">À valider</span>` : ""}
+      <h3>${escHtml(c.titre)}</h3>
+      <p>${escHtml(c.resume || "")}</p>
+      <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}${c.dateRevision ? ` · Révision : ${escHtml(new Date(c.dateRevision + "T00:00:00").toLocaleDateString("fr-FR"))}` : ""}</div>
+    </div>
+  `).join("") : (contenus.length ? `<div class="etat-vide">Aucun résultat pour cette recherche.</div>` : "");
   afficherBanniereValidation();
 }
 
