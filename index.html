@@ -333,6 +333,7 @@
           <div class="hero-stat"><span class="n" id="statBrouillons">0</span><span class="l">Brouillon</span></div>
         </div>
         <button class="btn primary" id="btnNouveauProcessus" onclick="allerVue('nouveauprocessus')" style="white-space:nowrap;">+ Nouveau processus</button>
+        <button class="btn" id="btnChargerExemples" onclick="chargerExemples()" style="white-space:nowrap;" title="Ajoute 8 processus fictifs de démonstration à la bibliothèque">+ Exemples fictifs</button>
       </div>
     </div>
     <div id="banniereValidation" class="hidden" style="background:var(--brand-signal-tint); border:1px solid transparent; color:var(--brand-signal); padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13.5px; font-weight:600; cursor:pointer;" onclick="filtrerAValider()">
@@ -353,7 +354,7 @@
     </div>
     <div id="grilleCatalogue" class="grid"></div>
     <p id="catalogueVide" class="info hidden">Aucun contenu pour l'instant.
-      <button class="btn" onclick="chargerExemples()">Charger 4 exemples fictifs</button>
+      <button class="btn" onclick="chargerExemples()">Charger 8 exemples fictifs</button>
     </p>
   </section>
 
@@ -687,6 +688,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("userAvatar").textContent = (profil.nom || "?").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
   document.getElementById("heroTitre").textContent = "Bonjour " + profil.nom.split(" ")[0];
   document.getElementById("btnNouveauProcessus").classList.toggle("hidden", profil.role === "lecteur");
+  document.getElementById("btnChargerExemples").classList.toggle("hidden", profil.role === "lecteur");
   document.getElementById("navEquipe").classList.toggle("hidden", profil.role !== "admin");
   document.getElementById("navParametres").classList.toggle("hidden", profil.role !== "admin");
   document.getElementById("navGroupAdmin").classList.toggle("hidden", profil.role !== "admin");
@@ -1131,7 +1133,11 @@ window.chargerExemples = async function () {
     { titre: "Campagne de renouvellement d'équipements fictive", type: "Processus opérationnel", resume: "Organisation d'une campagne de remplacement d'équipements en fin de vie.", prerequis: "Liste des équipements concernés extraite de l'outil fictif Parc-X.", etapes: ["Identifier les équipements éligibles", "Communiquer le planning aux utilisateurs", "Planifier les rendez-vous de remplacement", "Effacer et récupérer l'ancien équipement", "Clôturer le dossier"], pointsVigilance: "Ne jamais effacer un équipement sans confirmation écrite de l'utilisateur.", interlocuteurs: ["Équipe Change", "Équipe comptoir"], liens: [] },
     { titre: "Mise à jour forcée fictive (Android)", type: "Procédure technique", resume: "Déclenchement d'une mise à jour forcée via un outil fictif MDM-Test.", prerequis: "Accès à la console MDM-Test.", etapes: ["Se connecter à MDM-Test", "Sélectionner le groupe d'appareils", "Lancer la commande de mise à jour", "Vérifier la remontée de statut sous 24h"], pointsVigilance: "Prévenir les utilisateurs 48h avant, certains appareils peuvent redémarrer seuls.", interlocuteurs: ["Support MAM"], liens: [] },
     { titre: "Présentation générale du MAM fictif", type: "Documentation", resume: "Vue d'ensemble du fonctionnement d'une solution de gestion mobile fictive.", prerequis: "", etapes: [], pointsVigilance: "", interlocuteurs: ["Support MAM", "Ingénierie"], liens: [] },
-    { titre: "Processus de SAV fictif", type: "Processus opérationnel", resume: "Traitement d'une panne matérielle signalée par un utilisateur.", prerequis: "Ticket ouvert avec description du problème.", etapes: ["Qualifier la panne", "Vérifier la garantie", "Créer un dossier SAV", "Suivre l'échange ou la réparation", "Clôturer et informer l'utilisateur"], pointsVigilance: "Un appareil endommagé volontairement suit un circuit différent — voir procédure dédiée.", interlocuteurs: ["Équipe comptoir", "Intégrateur"], liens: [] }
+    { titre: "Processus de SAV fictif", type: "Processus opérationnel", resume: "Traitement d'une panne matérielle signalée par un utilisateur.", prerequis: "Ticket ouvert avec description du problème.", etapes: ["Qualifier la panne", "Vérifier la garantie", "Créer un dossier SAV", "Suivre l'échange ou la réparation", "Clôturer et informer l'utilisateur"], pointsVigilance: "Un appareil endommagé volontairement suit un circuit différent — voir procédure dédiée.", interlocuteurs: ["Équipe comptoir", "Intégrateur"], liens: [] },
+    { titre: "Réemploi des équipements en fin de vie fictif", type: "Processus opérationnel", resume: "Remise en circulation d'un équipement récupéré plutôt que sa mise au rebut.", prerequis: "Équipement récupéré et enregistré dans l'outil fictif Parc-X.", etapes: ["Diagnostiquer l'état général de l'équipement", "Effacer intégralement les données et comptes associés", "Tester le fonctionnement (batterie, écran, connectique)", "Réaffecter à un nouvel utilisateur ou reverser au stock de réemploi", "Tracer le réemploi dans Parc-X"], pointsVigilance: "Un équipement qui échoue au test de fonctionnement part en filière recyclage, jamais en réemploi direct.", interlocuteurs: ["Équipe comptoir", "Équipe Change"], liens: [] },
+    { titre: "Demande d'option monde sur un forfait mobile fictif", type: "Procédure technique", resume: "Activation d'une option d'itinérance internationale sur un forfait existant.", prerequis: "Forfait actif éligible à l'option, identifié via l'outil opérateur fictif Télé-X.", etapes: ["Vérifier l'éligibilité du forfait à l'option monde", "Recueillir la demande et la période de déplacement de l'utilisateur", "Activer l'option dans Télé-X", "Confirmer l'activation sous 24h", "Informer l'utilisateur des conditions d'usage à l'étranger"], pointsVigilance: "L'option n'est pas rétroactive : un départ le jour même nécessite une activation en urgence, à signaler explicitement.", interlocuteurs: ["Support téléphonie", "Opérateur (Télé-X)"], liens: [] },
+    { titre: "Blocage d'une ligne pour perte ou vol fictif", type: "Processus opérationnel", resume: "Suspension immédiate d'une ligne mobile signalée perdue ou volée.", prerequis: "Déclaration de l'utilisateur (oral, mail ou ticket).", etapes: ["Identifier la ligne et l'utilisateur concernés", "Bloquer la ligne dans Télé-X", "Commander une carte SIM de remplacement si nécessaire", "Informer l'utilisateur des délais de remplacement", "Clôturer le dossier une fois la ligne réactivée"], pointsVigilance: "Toujours confirmer l'identité du demandeur avant blocage — un blocage abusif prive l'utilisateur de toute communication.", interlocuteurs: ["Support téléphonie", "Équipe comptoir"], liens: [] },
+    { titre: "Ajout d'une ligne mobile pour un nouvel arrivant fictif", type: "Processus opérationnel", resume: "Création et attribution d'une ligne mobile lors de l'arrivée d'un collaborateur.", prerequis: "Fiche d'arrivée validée par les Ressources Humaines.", etapes: ["Vérifier le forfait attribué selon le profil du poste", "Créer la ligne dans Télé-X", "Associer la ligne à l'équipement remis au collaborateur", "Remettre la carte SIM et les identifiants d'accès", "Clôturer le dossier dans Parc-X"], pointsVigilance: "Sans fiche RH validée, aucune ligne ne peut être ouverte, même en urgence managériale.", interlocuteurs: ["RH", "Équipe comptoir", "Support téléphonie"], liens: [] }
   ];
   for (const ex of exemples) {
     await addDoc(collection(db, "contenus"), {
