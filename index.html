@@ -102,6 +102,7 @@
   .badge.avalider::before { background: var(--brand-signal); }
   .badge.revision { background: #fef3e2; color: #92400e; }
   .badge.revision::before { background: #d97706; }
+  .alerte-revision { background: var(--brand-signal); color: #fff; font-weight: 700; font-size: 13px; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
   .legende { font-size: 12px; color: var(--ink-500); margin: 4px 0 22px; display: flex; gap: 20px; flex-wrap: wrap; background: var(--surface-raised); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   .contenu-card { cursor: pointer; transition: box-shadow .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease); }
@@ -214,6 +215,14 @@
 
   /* ---------------- Export PDF (impression) ---------------- */
   .print-only { display: none; }
+  /* ---------------- Tutoriel d'onboarding interactif ---------------- */
+  #tutorielOverlay { position: fixed; inset: 0; z-index: 9999; }
+  .tutoriel-spotlight { position: absolute; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(20,24,35,.6); transition: all .25s var(--ease); pointer-events: none; }
+  .tutoriel-bulle { position: absolute; background: var(--surface-raised); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; width: 280px; max-width: calc(100vw - 28px); box-shadow: var(--shadow-hover); font-size: 13.5px; color: var(--ink); line-height: 1.5; transition: all .25s var(--ease); }
+  .tutoriel-bulle .titre { font-weight: 700; margin-bottom: 6px; font-size: 14px; color: var(--ink); }
+  .tutoriel-bulle .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 10px; }
+  .tutoriel-progres { font-size: 11px; color: var(--ink-400); font-weight: 600; white-space: nowrap; }
+
   @media print {
     body * { visibility: hidden; }
     #ficheContenu, #ficheContenu * { visibility: visible; }
@@ -470,6 +479,7 @@
   <section id="vueLisezmoi" class="hidden">
     <div class="card">
       <h2>Lisez-moi</h2>
+      <button class="btn" style="margin-bottom:16px;" onclick="lancerTutoriel()">Revoir le tutoriel</button>
       <p class="info" style="margin-bottom:18px;">Un processus, c'est une fiche qui explique comment faire quelque chose dans votre organisation — une manipulation technique, une organisation complète, ou une simple documentation de référence. L'idée : le capturer en le racontant à l'oral, pas en le rédigeant depuis une page blanche.</p>
 
       <div class="section-titre">Consulter</div>
@@ -554,6 +564,12 @@
   </section>
 
 </main>
+</div>
+
+<!-- TUTORIEL D'ONBOARDING -->
+<div id="tutorielOverlay" class="hidden">
+  <div class="tutoriel-spotlight" id="tutorielSpotlight"></div>
+  <div class="tutoriel-bulle" id="tutorielBulle"></div>
 </div>
 
 <script type="module">
@@ -662,6 +678,11 @@ onAuthStateChanged(auth, async (user) => {
   await chargerEtAppliquerTheme();
   await chargerContenus();
   restaurerDerniereVue();
+  try {
+    if (!localStorage.getItem("verbatim_tutorielVu_" + profil.uid)) {
+      setTimeout(() => lancerTutoriel(), 500);
+    }
+  } catch (e) {}
 });
 
 function restaurerDerniereVue() {
@@ -907,6 +928,65 @@ window.allerVue = function (vue) {
 };
 document.querySelectorAll("nav button[data-vue]").forEach(b => b.onclick = () => allerVue(b.dataset.vue));
 
+// ---------- TUTORIEL D'ONBOARDING ----------
+const ETAPES_TUTORIEL = [
+  { selecteur: "#btnNouveauProcessus", titre: "Créer un processus", texte: "Cliquez ici pour capturer un nouveau processus : à l'oral, depuis un document, ou à partir d'un compte-rendu de réunion." },
+  { selecteur: ".toolbar", titre: "Le Catalogue", texte: "Tous les processus de votre organisation sont ici, cherchables par mot-clé et filtrables par type juste au-dessus." },
+  { selecteur: "nav button[data-vue='assistant']", titre: "Assistant IA", texte: "Posez une question ici : l'Assistant répond en citant uniquement les processus déjà publiés." },
+  { selecteur: null, titre: "Mode Exécuter", texte: "Ouvrez n'importe quel processus et cliquez sur « Exécuter » pour suivre sa checklist étape par étape." }
+];
+let etapeTutorielCourante = 0;
+window.lancerTutoriel = function () {
+  allerVue("catalogue");
+  document.getElementById("tutorielOverlay").classList.remove("hidden");
+  setTimeout(() => afficherEtapeTutoriel(0), 60);
+};
+window.fermerTutoriel = function () {
+  document.getElementById("tutorielOverlay").classList.add("hidden");
+  try { if (profil) localStorage.setItem("verbatim_tutorielVu_" + profil.uid, "1"); } catch (e) {}
+};
+function afficherEtapeTutoriel(i) {
+  etapeTutorielCourante = i;
+  const etape = ETAPES_TUTORIEL[i];
+  const spot = document.getElementById("tutorielSpotlight");
+  const bulle = document.getElementById("tutorielBulle");
+  const cible = etape.selecteur ? document.querySelector(etape.selecteur) : null;
+  if (cible) {
+    const r = cible.getBoundingClientRect();
+    spot.style.display = "block";
+    spot.style.top = (r.top - 8) + "px";
+    spot.style.left = (r.left - 8) + "px";
+    spot.style.width = (r.width + 16) + "px";
+    spot.style.height = (r.height + 16) + "px";
+    let bulleTop = r.bottom + 14;
+    if (bulleTop + 170 > window.innerHeight) bulleTop = Math.max(14, r.top - 170);
+    let bulleLeft = Math.min(Math.max(14, r.left), window.innerWidth - 300);
+    bulle.style.transform = "none";
+    bulle.style.top = bulleTop + "px";
+    bulle.style.left = bulleLeft + "px";
+  } else {
+    spot.style.display = "none";
+    bulle.style.top = "42%";
+    bulle.style.left = "50%";
+    bulle.style.transform = "translate(-50%,-50%)";
+  }
+  bulle.innerHTML = `
+    <div class="titre">${escHtml(etape.titre)}</div>
+    <div>${escHtml(etape.texte)}</div>
+    <div class="actions">
+      <span class="tutoriel-progres">${i + 1} / ${ETAPES_TUTORIEL.length}</span>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" onclick="fermerTutoriel()">Passer</button>
+        <button class="btn primary" onclick="etapeTutorielSuivante()">${i === ETAPES_TUTORIEL.length - 1 ? "Terminer" : "Suivant"}</button>
+      </div>
+    </div>
+  `;
+}
+window.etapeTutorielSuivante = function () {
+  if (etapeTutorielCourante >= ETAPES_TUTORIEL.length - 1) { fermerTutoriel(); return; }
+  afficherEtapeTutoriel(etapeTutorielCourante + 1);
+};
+
 // ---------- CATALOGUE ----------
 async function chargerContenus() {
   const q = query(collection(db, "contenus"), where("organisationId", "==", profil.organisationId));
@@ -931,10 +1011,10 @@ function afficherCatalogue() {
   document.getElementById("statBrouillons").textContent = contenus.filter(c => c.statut === "Brouillon").length;
   grille.innerHTML = filtres.length ? filtres.map(c => `
     <div class="card contenu-card ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
+      ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div class="alerte-revision" style="margin:-22px -22px 12px -18px; border-radius:var(--radius) var(--radius) 0 0;">⚠ ${revisionDue(c) ? "Révision requise" : "À revoir"}</div>` : ""}
       <span class="badge ${classeType(c.type)}">${c.type}</span>
       <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
       ${estAValider(c) ? `<span class="badge avalider">À valider</span>` : ""}
-      ${revisionDue(c) ? `<span class="badge revision">Révision à confirmer</span>` : (c.revisionStatut === 'a_revoir' ? `<span class="badge revision">À revoir</span>` : "")}
       <h3>${escHtml(c.titre)}</h3>
       <p>${escHtml(c.resume || "")}</p>
       <div class="meta">Modifié le ${formatDate(c.derniereModification)} par ${escHtml(c.auteurNom || "?")}</div>
@@ -1054,11 +1134,11 @@ window.ouvrirFiche = function (id) {
   const peutModifier = profil.role !== "lecteur";
   document.getElementById("ficheContenu").innerHTML = `
     <div class="print-only">Verbatim — ${escHtml(c.type)} — exporté le ${new Date().toLocaleDateString("fr-FR")}</div>
+    ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div class="no-print alerte-revision" style="border-radius:10px; margin-bottom:16px;">⚠ ${revisionDue(c) ? "Révision requise — ce processus doit être vérifié." : "Ce processus a été marqué à revoir lors de sa dernière révision."}</div>` : ""}
     <span class="badge ${classeType(c.type)}">${c.type}</span>
     <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
     ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">Généré par IA — non validé</span>` : ""}
     ${c.propositionEnAttente ? `<span class="badge avalider">Modification proposée</span>` : ""}
-    ${revisionDue(c) ? `<span class="badge revision">Révision à confirmer</span>` : (c.revisionStatut === 'a_revoir' ? `<span class="badge revision">À revoir</span>` : "")}
     <div class="fiche-entete">
       <h2>${escHtml(c.titre)}</h2>
       <div class="no-print fiche-actions">
