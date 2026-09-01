@@ -1011,7 +1011,7 @@ function afficherCatalogue() {
   document.getElementById("statBrouillons").textContent = contenus.filter(c => c.statut === "Brouillon").length;
   grille.innerHTML = filtres.length ? filtres.map(c => `
     <div class="card contenu-card ${classeType(c.type)}" onclick="ouvrirFiche('${c.id}')">
-      ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div class="alerte-revision" style="margin:-22px -22px 12px -18px; border-radius:var(--radius) var(--radius) 0 0;">⚠ ${revisionDue(c) ? "Révision requise" : "À revoir"}</div>` : ""}
+      ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div class="alerte-revision" style="margin:-22px -22px 12px -18px; border-radius:var(--radius) var(--radius) 0 0;">${ICONE_ALERTE}${revisionDue(c) ? "Révision requise" : "À revoir"}</div>` : ""}
       <span class="badge ${classeType(c.type)}">${c.type}</span>
       <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
       ${estAValider(c) ? `<span class="badge avalider">À valider</span>` : ""}
@@ -1048,6 +1048,7 @@ function classeType(t) {
 const ICONE_PLAY = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
 const ICONE_CRAYON = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>`;
 const ICONE_TELECHARGER = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+const ICONE_ALERTE = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
 function estAValider(c) {
   return (c.origineIA && !c.valideParResponsable) || !!c.propositionEnAttente;
 }
@@ -1134,7 +1135,7 @@ window.ouvrirFiche = function (id) {
   const peutModifier = profil.role !== "lecteur";
   document.getElementById("ficheContenu").innerHTML = `
     <div class="print-only">Verbatim — ${escHtml(c.type)} — exporté le ${new Date().toLocaleDateString("fr-FR")}</div>
-    ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div class="no-print alerte-revision" style="border-radius:10px; margin-bottom:16px;">⚠ ${revisionDue(c) ? "Révision requise — ce processus doit être vérifié." : "Ce processus a été marqué à revoir lors de sa dernière révision."}</div>` : ""}
+    ${(revisionDue(c) || c.revisionStatut === 'a_revoir') ? `<div class="no-print alerte-revision" style="border-radius:10px; margin-bottom:16px;">${ICONE_ALERTE}${revisionDue(c) ? "Révision requise — ce processus doit être vérifié." : "Ce processus a été marqué à revoir lors de sa dernière révision."}</div>` : ""}
     <span class="badge ${classeType(c.type)}">${c.type}</span>
     <span class="badge ${c.statut === 'Publié' ? 'publie' : 'brouillon'}">${c.statut}</span>
     ${(c.origineIA && !c.valideParResponsable) ? `<span class="badge avalider">Généré par IA — non validé</span>` : ""}
