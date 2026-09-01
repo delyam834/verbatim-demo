@@ -208,6 +208,19 @@
   ::-webkit-scrollbar { width: 9px; }
   ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--ink-400); }
+  /* ---------------- Écran de connexion (mise en page fendue) ---------------- */
+  .auth-layout { display: flex; min-height: 100vh; }
+  .auth-brand { flex: 0 0 42%; max-width: 460px; min-width: 320px; background: var(--action); color: #fff; padding: 44px 42px; display: flex; flex-direction: column; justify-content: space-between; }
+  .auth-brand-nom { font-size: 14.5px; font-weight: 700; color: #fff; }
+  .auth-brand-corps h1 { font-size: 25px; font-weight: 700; line-height: 1.32; letter-spacing: -.4px; margin: 44px 0 30px; max-width: 360px; color: #fff; }
+  .auth-brand-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px; }
+  .auth-brand-liste li { font-size: 13.5px; color: rgba(255,255,255,.82); padding-left: 20px; position: relative; line-height: 1.5; }
+  .auth-brand-liste li::before { content: ""; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 1px; background: var(--brand-accent); }
+  .auth-brand-note { font-size: 11.5px; color: rgba(255,255,255,.55); }
+  .auth-form-zone { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--surface); }
+  .auth-form { width: 100%; max-width: 340px; }
+  @media (max-width: 720px) { .auth-brand { display: none; } }
+
   /* ---------------- Export PDF (impression) ---------------- */
   .print-only { display: none; }
   /* ---------------- Tutoriel d'onboarding interactif ---------------- */
@@ -235,35 +248,45 @@
 <body>
 <div id="fondPersonnalise"></div>
 
-<header id="headerAuth">
-  <div class="logo">
-    <div class="logo-mark">V</div>
-    <h1>Verbatim<br><span>démonstrateur — données fictives</span></h1>
-  </div>
-</header>
-
 <!-- ===================== ECRAN CONNEXION ===================== -->
-<main id="ecranAuth">
-  <div class="card" style="max-width:420px; margin:40px auto;">
-    <h2 id="authTitre">Connexion</h2>
-    <div id="champsInscriptionSeulement" class="hidden">
-      <label>Nom complet</label>
-      <input type="text" id="inpNom" placeholder="Ex. Delya Maali">
-      <label>Identifiant d'organisation</label>
-      <input type="text" id="inpOrg" placeholder="Ex. mobilite-individuelle-demo">
-      <p class="info">Fourni par l'administrateur de votre entreprise. Un nouveau compte démarre toujours avec le rôle Lecteur.</p>
+<div id="ecranAuth" class="auth-layout">
+  <aside class="auth-brand">
+    <div class="logo">
+      <div class="logo-mark" style="border-color:rgba(255,255,255,.6); color:#fff;">V</div>
+      <span class="auth-brand-nom">Verbatim</span>
     </div>
-    <label>E-mail</label>
-    <input type="email" id="inpEmail">
-    <label>Mot de passe</label>
-    <input type="password" id="inpPass">
-    <div style="margin-top:16px; display:flex; gap:10px;">
-      <button class="btn primary" id="btnAuthAction">Se connecter</button>
-      <button class="btn" id="btnToggleAuth">Créer un compte</button>
+    <div class="auth-brand-corps">
+      <h1>La mémoire opérationnelle de votre organisation, capturée à l'oral.</h1>
+      <ul class="auth-brand-liste">
+        <li>Racontez un processus à voix haute, l'IA le structure en fiche</li>
+        <li>Chaque contenu généré attend une validation humaine explicite</li>
+        <li>Exécutable en checklist par toute l'équipe, à tout moment</li>
+      </ul>
     </div>
-    <p class="erreur" id="authErreur"></p>
-  </div>
-</main>
+    <span class="auth-brand-note">démonstrateur — données fictives</span>
+  </aside>
+  <main class="auth-form-zone">
+    <div class="auth-form">
+      <h2 id="authTitre">Connexion</h2>
+      <div id="champsInscriptionSeulement" class="hidden">
+        <label>Nom complet</label>
+        <input type="text" id="inpNom" placeholder="Ex. Delya Maali">
+        <label>Identifiant d'organisation</label>
+        <input type="text" id="inpOrg" placeholder="Ex. mobilite-individuelle-demo">
+        <p class="info">Fourni par l'administrateur de votre entreprise. Un nouveau compte démarre toujours avec le rôle Lecteur.</p>
+      </div>
+      <label>E-mail</label>
+      <input type="email" id="inpEmail">
+      <label>Mot de passe</label>
+      <input type="password" id="inpPass">
+      <div style="margin-top:16px; display:flex; gap:10px;">
+        <button class="btn primary" id="btnAuthAction">Se connecter</button>
+        <button class="btn" id="btnToggleAuth">Créer un compte</button>
+      </div>
+      <p class="erreur" id="authErreur"></p>
+    </div>
+  </main>
+</div>
 
 <!-- ===================== APPLICATION ===================== -->
 <div id="app" class="hidden">
@@ -646,7 +669,6 @@ document.getElementById("btnLogout").onclick = () => signOut(auth);
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     profil = null;
-    document.getElementById("headerAuth").classList.remove("hidden");
     document.getElementById("ecranAuth").classList.remove("hidden");
     document.getElementById("app").classList.add("hidden");
     return;
@@ -658,7 +680,6 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
   profil = { uid: user.uid, ...snap.data() };
-  document.getElementById("headerAuth").classList.add("hidden");
   document.getElementById("ecranAuth").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
   document.getElementById("userEmail").textContent = profil.nom + " (" + profil.email + ")";
